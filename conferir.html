@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Conferir pedido | Lanchonete Bate Papo</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Barlow+Condensed:wght@700;800&family=Figtree:wght@400;600;700&display=swap">
+<style>
+:root{--red:#c8281e;--mustard:#f6b51e;--paper:#fff8ee;--card:#fff;--ink:#2b1710;--muted:#7d6253;--line:#efdfcd;--ok:#15803f;
+  --display:"Bowlby One","Arial Black",Impact,sans-serif;--cond:"Barlow Condensed","Arial Narrow",sans-serif;--body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--display);font-weight:400;color:var(--red);font-size:clamp(28px,6vw,40px);line-height:1;margin:0}
+p{margin:0;color:var(--muted)}
+textarea{width:100%;min-height:200px;font:inherit;font-size:15px;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px;resize:vertical}
+textarea:focus{outline:none;border-color:var(--red)}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 18px;font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.05em;text-transform:uppercase}
+.pri{background:var(--red);color:#fff;box-shadow:3px 3px 0 var(--ink)}
+.sec{background:none;border:2px solid var(--line);color:var(--ink)}
+button:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.card{background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:18px;box-shadow:5px 5px 0 var(--mustard)}
+.cli{font-family:var(--cond);font-weight:800;font-size:22px;text-transform:uppercase;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:9px 0;border-bottom:1.5px dashed var(--line);vertical-align:top}
+td.v{text-align:right;white-space:nowrap;font-weight:700;padding-left:12px}
+.nm{font-weight:700}
+.sub{color:var(--muted);font-size:14px}
+.tot{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;font-family:var(--cond);font-weight:800;text-transform:uppercase}
+.tot span{letter-spacing:.08em;color:var(--muted);font-size:18px}
+.tot strong{font-size:34px}
+.alerta{background:#fff1ef;border:2px solid var(--red);border-radius:12px;padding:12px 14px;color:var(--ink)}
+.alerta b{color:var(--red)}
+.alerta ul{margin:6px 0 0;padding-left:20px;word-break:break-word}
+.okmsg{color:var(--ok);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Conferir pedido</h1>
+  <p>Cole aqui a mensagem do pedido que chegou no WhatsApp. O valor é calculado com os preços oficiais do cardápio, não com o que está escrito na mensagem.</p>
+  <label for="txt" class="sub">Mensagem do pedido</label>
+  <textarea id="txt" placeholder="Cole a mensagem aqui" spellcheck="false"></textarea>
+  <div class="btns"><button class="pri" id="calc" type="button">Calcular valor</button><button class="sec" id="limpa" type="button">Limpar</button></div>
+  <div id="out" aria-live="polite"></div>
+</div>
+<script src="cardapio.js"></script>
+<script src="core.js"></script>
+<script src="conferir.js"></script>
+</body>
+</html>
