@@ -6,7 +6,7 @@
 <title>Conferir pedido | Lanchonete Bate Papo</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="preload" href="fonts/bowlby-one-400.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -55,8 +55,6 @@ td.v{text-align:right;white-space:nowrap;font-weight:700;padding-left:12px}
   <div class="btns"><button class="pri" id="calc" type="button">Calcular valor</button><button class="sec" id="limpa" type="button">Limpar</button></div>
   <div id="out" aria-live="polite"></div>
 </div>
-<script src="cardapio.js"></script>
-<script src="core.js"></script>
-<script src="conferir.js"></script>
+<script src="carregar.js" data-scripts="cardapio.js,core.js,conferir.js"></script>
 </body>
 </html>

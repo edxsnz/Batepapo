@@ -188,6 +188,7 @@
   });
   busca.addEventListener("keydown", e => { if (e.key === "Enter") busca.blur(); if (e.key === "Escape") { busca.value = ""; mostrarBusca(); } });
   $("limpar").addEventListener("click", () => { busca.value = ""; mostrarBusca(); busca.focus(); });
+  if (busca.value) mostrarBusca();                     // cliente digitou (ou o navegador preencheu) antes do cardápio terminar de carregar
 
   /* categoria ativa na barra */
   const links = [...document.querySelectorAll(".cats a")];

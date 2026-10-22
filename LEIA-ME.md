@@ -8,6 +8,8 @@
 | `index.html` | O site do cardápio | Não |
 | `app.js` | Busca, sacola e pedido | Não |
 | `core.js` | Regras de preço, validação e mensagem | Não |
+| `carregar.js` | Faz o site se atualizar sozinho para quem já visitou (sem precisar "limpar cache") | Não |
+| `_headers` | Regra de cache para Netlify/Cloudflare (no GitHub Pages é ignorado) | Não |
 | `verificar.html` | Mostra os preços como o site entendeu e avisa de erros de digitação | Não (só abrir) |
 | `conferir.html` + `conferir.js` | Página do atendente para conferir o valor do pedido | Não |
 | `fonts/` | Fontes do site (hospedadas junto, sem depender do Google) | Não |
@@ -17,6 +19,12 @@
 Abra o `cardapio.js`, troque o número depois de `preco:` e salve. Use ponto nos centavos: `14.50`.
 
 **Depois de salvar, abra `seusite/verificar.html`.** Ela lista todos os lanches com o preço que o site entendeu. Se faltar uma vírgula ou uma aspa, ela diz qual é a linha do erro. Sem ela, um erro de digitação deixaria o site "indisponível" sem você saber o motivo.
+
+## Atualização automática
+
+O GitHub Pages deixa o navegador guardar os arquivos por uns 10 minutos, então quem já tinha visitado o site podia continuar vendo preços antigos. O `carregar.js` resolve: a cada visita ele pergunta ao servidor se algo mudou (uma pergunta leve) e, se a página mudou, recarrega uma vez sozinho. **Você não precisa fazer nada além de salvar/subir os arquivos.** Se estiver sem internet, o cardápio abre normalmente com o que o navegador já tem.
+
+Só na **primeira** vez depois de subir esta versão, quem tem o site aberto no celular pode precisar de uns 10 minutos (ou atualizar uma vez) para pegar o carregador; dali em diante é automático.
 
 ## Conferir o valor de um pedido
 
@@ -40,7 +48,7 @@ node --test saboteur.test.js             # SABOTADOR das regras: 20 mil sacolas 
 python3 -m http.server 8765 -d ..  &     # serve o site
 python3 e2e.py                           # bateria no navegador (precisa de: pip install playwright)
 python3 saboteur.py                      # SABOTADOR no navegador: macaco, armazenamento cheio, HTML adulterado, 2 abas, telas extremas...
-python3 saboteur.py macaco               # roda só um cenário (macaco, storage, dom, abas, historico, busca, texto, cliques, ambiente, conferir, teclado, desempenho, privacidade, verificar)
+python3 saboteur.py macaco               # roda só um cenário (macaco, storage, dom, abas, historico, busca, texto, cliques, ambiente, conferir, teclado, desempenho, privacidade, verificar, atualizacao)
 ```
 
 O sabotador usa sementes fixas: se ele achar um defeito, o defeito aparece sempre igual até ser corrigido.

@@ -1,0 +1,6 @@
+# Para hospedagens que leem este arquivo (Netlify, Cloudflare Pages): sempre confirmar com o servidor antes de usar o que está guardado.
+# No GitHub Pages este arquivo é ignorado, e quem cuida disso é o carregar.js.
+/*
+  Cache-Control: no-cache
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

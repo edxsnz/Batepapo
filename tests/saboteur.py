@@ -30,6 +30,12 @@ NASTY = ["", " ", "a", "sem tomate", "Sem Cebola!!", "*2x X-TUDO*", "_1x GRÁTIS
 def nova(ctx, vw=390, h=844):
     pg = ctx.new_page(); pg.set_viewport_size({"width": vw, "height": h})
     pg._erros, pg._popups = [], 0
+    _goto = pg.goto
+    def _goto_espera(u, **k):
+        r = _goto(u, **k)
+        if u.endswith("/"): pg.wait_for_selector("#carregando", state="detached", timeout=8000)     # o carregador confere atualizações antes de montar o cardápio
+        return r
+    pg.goto = _goto_espera; pg._goto_cru = _goto
     pg.on("pageerror", lambda e: pg._erros.append("pageerror: " + str(e)[:200]))
     pg.on("console", lambda m: pg._erros.append("console: " + m.text[:200]) if m.type == "error" and not re.search(r"fonts\.g|ERR_|Failed to load resource|favicon", m.text) else None)
     pg.on("dialog", lambda d: (pg._erros.append("DIALOG " + d.message[:80]), d.dismiss()))
@@ -384,7 +390,7 @@ def cenario_cliques(b):
 def cenario_ambiente(b, p):
     print("\n[9] AMBIENTE — arquivo que não carrega, sem JavaScript, sem internet, telas e fontes extremas")
     for quem, esperado in [("cardapio.js", "Cardápio indisponível"), ("core.js", "Não foi possível carregar"), ("app.js", None)]:
-        ctx = b.new_context(); pg = nova(ctx); pg.route(re.compile(r".*/" + re.escape(quem) + r"$"), lambda r: r.abort()); pg.goto(URL); pg.wait_for_timeout(400)
+        ctx = b.new_context(); pg = nova(ctx); pg.route(re.compile(r".*/" + re.escape(quem) + r"$"), lambda r: r.abort()); pg._goto_cru(URL); pg.wait_for_timeout(400)
         txt = pg.inner_text("body"); erros = [e for e in pg._erros if "pageerror" in e]
         check(not erros, f"sem {quem}: erro de script {erros[:1]}")
         check(len(txt.strip()) > 40, f"sem {quem}: página em branco")
@@ -510,9 +516,73 @@ def cenario_verificar(b):
     ctx, pg = abrir(lambda s: s.replace('"551633823518"', '"123"')); out = pg.inner_text("#out"); check("número do WhatsApp está errado" in out, "número errado é apontado"); ctx.close()
     ctx, pg = abrir(lambda s: s.replace('destaque: "Especial da casa", ', '')); out = pg.inner_text("#out"); check("destaque" in out and "nenhum" in out, "sem destaque é apontado"); ctx.close()
 
+# ---------------------------------------------------------------- 15. atualização automática (cache do navegador)
+def servidor_estilo_github_pages(pasta, porta):
+    """Servidor que imita o GitHub Pages: o navegador pode guardar cada arquivo por 10 minutos (max-age=600), com ETag."""
+    import http.server, mimetypes, os, threading
+    class H(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a): pass
+        def do_GET(self):
+            caminho = self.path.split("?")[0].split("#")[0]
+            f = os.path.join(pasta, caminho.lstrip("/") or "index.html")
+            if os.path.isdir(f): f = os.path.join(f, "index.html")
+            if not os.path.isfile(f): self.send_response(404); self.end_headers(); return
+            st = os.stat(f); etag = f'"{st.st_mtime_ns}-{st.st_size}"'
+            self.send_response(304 if self.headers.get("If-None-Match") == etag else 200)
+            self.send_header("ETag", etag); self.send_header("Cache-Control", "max-age=600")
+            self.send_header("Content-Type", (mimetypes.guess_type(f)[0] or "application/octet-stream") + ("; charset=utf-8" if f.endswith((".html", ".js")) else ""))
+            if self.headers.get("If-None-Match") == etag: self.end_headers(); return
+            dados = open(f, "rb").read(); self.send_header("Content-Length", str(len(dados))); self.end_headers(); self.wfile.write(dados)
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", porta), H); threading.Thread(target=srv.serve_forever, daemon=True).start(); return srv
+
+def cenario_atualizacao(b, origem=None, esperado_ok=True):
+    import os, shutil, tempfile
+    print("\n[15] ATUALIZAÇÃO — quem já visitou vê a versão nova sem 'forçar atualização'")
+    aqui = os.path.dirname(os.path.abspath(__file__))
+    site = origem or (os.path.join(aqui, "..") if os.path.exists(os.path.join(aqui, "..", "index.html")) else os.path.join(aqui, "..", "site"))
+    tmp = tempfile.mkdtemp(); pasta = os.path.join(tmp, "site"); shutil.copytree(site, pasta, ignore=shutil.ignore_patterns("tests", "node_modules"))
+    srv = servidor_estilo_github_pages(pasta, 8766); U = "http://127.0.0.1:8766/"
+    def lendo(arq): return open(os.path.join(pasta, arq), encoding="utf8").read()
+    def gravando(arq, texto): open(os.path.join(pasta, arq), "w", encoding="utf8").write(texto); os.utime(os.path.join(pasta, arq), None)
+    def preco(pg): return pg.evaluate("() => document.querySelector('.item:has(.name) .int') && [...document.querySelectorAll('.item')].find(i => i.querySelector('.name').textContent === 'X-Tudo').querySelector('.int').textContent")
+    def abrir(pg):
+        pg.goto(U); pg.wait_for_timeout(1200)
+        try: pg.wait_for_selector(".item", timeout=3000)
+        except PWError: pass
+        pg.wait_for_timeout(600)
+    ctx = b.new_context(); pg = ctx.new_page(); pg._erros = []          # sem route: com interceptação o Playwright desliga o cache e o teste não mostraria o problema
+    pg.on("pageerror", lambda e: pg._erros.append(str(e))); abrir(pg)
+    check(preco(pg) == "24" and "Cardápio |" in pg.title(), f"primeira visita: preço {preco(pg)}, título {pg.title()!r}")
+    # 1) só o cardapio.js muda (o dono mexeu num preço)
+    gravando("cardapio.js", re.sub(r'(nome: "X-Tudo",\s+preco: )24', r"\g<1>25", lendo("cardapio.js"))); abrir(pg)
+    r1 = preco(pg); check((r1 == "25") == esperado_ok, f"depois de mudar só o preço: o visitante vê {r1} (esperado {'25' if esperado_ok else '24 (velho: o teste prova o problema)'})")
+    # 2) só o index.html muda (visual/texto)
+    gravando("index.html", lendo("index.html").replace("<title>Cardápio |", "<title>Cardápio NOVO |", 1)); abrir(pg)
+    check(("NOVO" in pg.title()) == esperado_ok, f"depois de mudar só a página: título {pg.title()!r}")
+    # 3) mudam os dois juntos
+    gravando("cardapio.js", lendo("cardapio.js").replace("preco: 25", "preco: 26", 1)); gravando("index.html", lendo("index.html").replace("Cardápio NOVO |", "Cardápio NOVÍSSIMO |", 1)); abrir(pg)
+    check((preco(pg) == "26" and "NOVÍSSIMO" in pg.title()) == esperado_ok, f"os dois ao mesmo tempo: preço {preco(pg)}, título {pg.title()!r}")
+    if esperado_ok:
+        # sem mudança: não pode ficar recarregando
+        n0 = pg.evaluate("performance.getEntriesByType('navigation').length"); abrir(pg); pg.wait_for_timeout(1500)
+        check(not pg._erros, f"sem erros na atualização {pg._erros[:2]}")
+        recarregos = []; pg.on("framenavigated", lambda f: recarregos.append(f.url) if f == pg.main_frame else None); pg.wait_for_timeout(2500)
+        check(len(recarregos) == 0, f"página parada não deveria recarregar sozinha ({len(recarregos)} vezes)")
+        # servidor muda o tempo todo (ex.: CDN que injeta data): nunca entra em laço de recarga
+        orig = lendo("index.html"); cont = {"n": 0}
+        for i in range(4):
+            gravando("index.html", orig.replace("</body>", f"<!--{i}--></body>", 1)); pg.goto(U); pg.wait_for_timeout(500)
+        nav = []; pg.on("framenavigated", lambda f: nav.append(1) if f == pg.main_frame else None); pg.wait_for_timeout(3000)
+        check(len(nav) <= 1, f"página que muda a cada visita não pode entrar em laço de recarga ({len(nav)})")
+        # sem internet / servidor fora do ar: abre com o que já tem
+        ctx.set_offline(True); pg.goto(U); pg.wait_for_timeout(1500)
+        pg.wait_for_timeout(800); check(pg.locator(".item").count() > 0, "sem internet o cardápio abre com o que o navegador já guardou")
+        ctx.set_offline(False)
+    srv.shutdown(); ctx.close(); shutil.rmtree(tmp, ignore_errors=True)
+
 CENARIOS = [("macaco", lambda b, p: cenario_macaco(b)), ("storage", lambda b, p: cenario_storage(b)), ("dom", lambda b, p: cenario_dom(b)), ("abas", lambda b, p: cenario_abas(b)),
             ("historico", lambda b, p: cenario_historico(b)), ("busca", lambda b, p: cenario_busca(b)), ("texto", lambda b, p: cenario_texto(b)), ("cliques", lambda b, p: cenario_cliques(b)),
-            ("ambiente", cenario_ambiente), ("conferir", lambda b, p: cenario_conferir(b)), ("teclado", lambda b, p: cenario_teclado(b)), ("desempenho", lambda b, p: cenario_desempenho(b)), ("privacidade", lambda b, p: cenario_privacidade(b)), ("verificar", lambda b, p: cenario_verificar(b))]
+            ("ambiente", cenario_ambiente), ("conferir", lambda b, p: cenario_conferir(b)), ("teclado", lambda b, p: cenario_teclado(b)), ("desempenho", lambda b, p: cenario_desempenho(b)), ("privacidade", lambda b, p: cenario_privacidade(b)), ("verificar", lambda b, p: cenario_verificar(b)), ("atualizacao", lambda b, p: cenario_atualizacao(b))]
 
 if __name__ == "__main__":
     with sync_playwright() as p:

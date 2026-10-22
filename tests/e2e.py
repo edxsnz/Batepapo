@@ -15,6 +15,12 @@ def nova(ctx, vw=390, h=844):
     pg = ctx.new_page(); pg.set_viewport_size({"width": vw, "height": h})
     pg._erros = []
     pg.on("pageerror", lambda e: pg._erros.append(str(e)))
+    _goto = pg.goto
+    def _goto_espera(u, **k):
+        r = _goto(u, **k)
+        if u.endswith("/"): pg.wait_for_selector("#carregando", state="detached", timeout=8000)     # o carregador confere atualizações antes de montar o cardápio
+        return r
+    pg.goto = _goto_espera
     pg.on("console", lambda m: pg._erros.append(m.text) if m.type == "error" and "fonts.g" not in m.text and "ERR_TUNNEL" not in m.text and "Failed to load resource" not in m.text else None)
     pg.route(re.compile(r"https://(fonts\.googleapis|fonts\.gstatic|wa\.me).*"), lambda r: r.fulfill(status=200, body=""))
     return pg

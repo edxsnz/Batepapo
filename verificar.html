@@ -6,7 +6,7 @@
 <title>Verificar cardápio | Lanchonete Bate Papo</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <link rel="preload" href="fonts/bowlby-one-400.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -43,9 +43,6 @@ code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 
   <p>Abra esta página depois de mexer no <b>cardapio.js</b>. Ela mostra todos os lanches e preços como o site entendeu e avisa se algo está errado.</p>
   <div id="out" aria-live="polite"><p>Verificando…</p></div>
 </div>
-<script src="verificar.js"></script>
-<script src="cardapio.js"></script>
-<script src="core.js"></script>
-<script src="verificar-tela.js"></script>
+<script src="carregar.js" data-scripts="verificar.js,cardapio.js,core.js,verificar-tela.js"></script>
 </body>
 </html>
