@@ -1,12 +1,14 @@
 /* Página do atendente: recalcula o pedido com os preços oficiais do cardapio.js. */
 (function () {
   "use strict";
-  const BP = window.BP, cat = BP.catalogo(window.CARDAPIO);
   const $ = id => document.getElementById(id);
+  const BP = window.BP;
+  if (!BP) { $("out").innerHTML = '<div class="alerta"><b>Não foi possível carregar.</b> Atualize a página.</div>'; return; }
+  const cat = BP.catalogo(window.CARDAPIO);
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   function calcular() {
-    const texto = $("txt").value.slice(0, 8000);
+    const texto = $("txt").value;
     if (!texto.trim()) { $("out").innerHTML = ""; return; }
     const r = BP.lerMensagem(texto, cat);
     let h = "";

@@ -10,14 +10,20 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#c8281e">
 <meta name="color-scheme" content="light">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="format-detection" content="telephone=no">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c8281e'/%3E%3Cpath d='M12 31c0-11 9-18 20-18s20 7 20 18z' fill='%23f6b51e'/%3E%3Crect x='10' y='34' width='44' height='7' rx='3.5' fill='%23fff8ee'/%3E%3Cpath d='M12 44h40c0 6-6 9-20 9s-20-3-20-9z' fill='%23f6b51e'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Barlow+Condensed:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="preload" href="fonts/bowlby-one-400.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+@font-face{font-family:"Bowlby One";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/bowlby-one-400.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/figtree-400.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/figtree-500.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/figtree-600.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/figtree-700.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/barlow-condensed-600.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/barlow-condensed-700.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:800;font-display:swap;src:url(fonts/barlow-condensed-800.woff2) format("woff2")}
 /* Lanchonete de balcão: vermelho de chapa, amarelo mostarda, faixa xadrez de lanchonete */
 :root{
   --red:#c8281e; --red-deep:#9b1b13; --mustard:#f6b51e; --wa:#1c9c52; --wa-deep:#15803f;
@@ -100,7 +106,7 @@ section{padding-top:48px;scroll-margin-top:130px}
 .sec-head{display:flex;align-items:center;gap:14px;margin-bottom:10px}
 .badge{flex:none;width:52px;height:52px;border-radius:50%;background:var(--mustard);color:var(--ink);display:grid;place-items:center;box-shadow:3px 3px 0 var(--ink)}
 .badge svg{width:28px;height:28px}
-.sec-title{min-width:0}
+.sec-title{min-width:0;overflow-wrap:anywhere}
 h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);line-height:1;margin:0;color:var(--red);text-wrap:balance}
 .sec-sub{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
 .rule{flex:1;height:4px;align-self:center;margin-left:6px;background:repeating-linear-gradient(90deg,var(--mustard) 0 14px,transparent 14px 22px);border-radius:2px;min-width:20px}
@@ -141,9 +147,9 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 .chip .price .int{font-size:21px}
 
 /* resultados da busca */
-.results-head{padding-top:28px;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.results-head{overflow-wrap:anywhere;padding-top:28px;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .results-head b{color:var(--ink)}
-.nores{text-align:center;padding:48px 0 20px;color:var(--muted)}
+.nores{overflow-wrap:anywhere;text-align:center;padding:48px 0 20px;color:var(--muted)}
 .nores strong{display:block;font-family:var(--display);font-weight:400;font-size:26px;color:var(--ink);margin-bottom:6px}
 
 /* ---------- botão da sacola ---------- */
@@ -166,7 +172,7 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 @media (min-width:700px){.sheet{border-radius:22px;box-shadow:8px 8px 0 var(--ink)}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .25s cubic-bezier(.2,.9,.3,1)}@keyframes up{from{transform:translateY(40px)}}}
 .sh-head{display:flex;align-items:flex-start;gap:12px;padding:20px 20px 12px;border-bottom:2px dashed var(--line)}
-.sh-head h3{flex:1;margin:0;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.05;color:var(--red)}
+.sh-head h3{flex:1;min-width:0;overflow-wrap:anywhere;margin:0;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.05;color:var(--red)}
 .sh-head p{margin:6px 0 0;color:var(--muted);font-size:14.5px}
 .x{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:var(--line);font-size:22px;line-height:1;display:grid;place-items:center}
 .sh-body{padding:16px 20px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:18px}
@@ -215,6 +221,8 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 .toast{position:fixed;z-index:30;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;
   padding:10px 16px;border-radius:99px;font-weight:600;font-size:14.5px;box-shadow:0 8px 20px rgba(0,0,0,.25);max-width:calc(100% - 32px);text-align:center}
 
+@media (max-width:300px){.sec-head{gap:10px}.badge{width:42px;height:42px}.sec-title h2{font-size:20px}.sh-head h3{font-size:22px}}
+@media (max-height:520px){.sh-foot{flex-direction:row;flex-wrap:wrap;gap:8px;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px))}.sh-foot .big{flex:1 1 150px;min-height:44px;padding-block:8px}.sh-foot .total,.sh-foot .hint,.sh-foot .foot-row{flex:1 1 100%}.sh-head{padding-block:12px 8px}.sh-body{min-height:96px}}
 @media (max-width:360px){.name{font-size:20px}.price .int{font-size:23px}.top{gap:7px}.dots{min-width:8px}.item{gap:0 9px}.add{width:36px;height:36px}}
 /* destaque promocional */
 .promo{position:relative;margin-top:36px;border-radius:22px;overflow:hidden;cursor:pointer;color:#fff;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--mustard);
@@ -340,9 +348,9 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
   <nav class="wrap cats" id="cats" aria-label="Categorias do cardápio"></nav>
 </div>
 
-<noscript><div class="wrap nores"><strong>Ative o JavaScript</strong>Para ver o cardápio, ative o JavaScript do navegador.</div></noscript>
+<noscript><style>#carregando{display:none}</style><div class="wrap nores"><strong>Ative o JavaScript</strong>Para ver o cardápio, ative o JavaScript do navegador.</div></noscript>
 <main class="wrap">
-  <div id="menu"></div>
+  <div id="menu"><div class="nores" id="carregando"><strong>Carregando o cardápio…</strong>Se demorar, atualize a página.</div></div>
   <div id="resultados" hidden></div>
 </main>
 
@@ -405,6 +413,7 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
       <div>
         <div class="label">Mensagem que vai para o WhatsApp</div>
         <pre class="msg" id="msg"></pre>
+        <p class="err" id="msgLongo" hidden>Seu pedido é grande. Se o WhatsApp abrir sem o texto, toque em <b>Copiar pedido</b> e cole na conversa.</p>
       </div>
       <p class="hint">Quando o WhatsApp abrir, a mensagem já vai estar escrita. É só tocar em <b>enviar</b>.</p>
     </div>
@@ -413,6 +422,7 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
         <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
         Abrir no WhatsApp
       </a>
+      <button class="big ghost" type="button" data-copiar>Copiar pedido</button>
       <button class="big ghost" type="button" id="voltar">Voltar para a sacola</button>
     </div>
 
@@ -425,6 +435,7 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
     <div class="sh-foot" id="footOk" hidden>
       <button class="big" type="button" id="novo">Já enviei, esvaziar sacola</button>
       <button class="big ghost" type="button" id="reabrir">Abrir WhatsApp de novo</button>
+      <button class="big ghost" type="button" data-copiar>Copiar pedido</button>
     </div>
   </div>
 </div>

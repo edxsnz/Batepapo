@@ -4,6 +4,7 @@
   "use strict";
   const BP = window.BP;
   const $ = id => document.getElementById(id);
+  if (!BP) { $("menu").innerHTML = '<div class="nores"><strong>Não foi possível carregar o cardápio</strong>Atualize a página. Se continuar assim, fale com a lanchonete pelo WhatsApp.</div>'; return; }
   const cat = BP.catalogo(window.CARDAPIO);
   const NUMERO = String(window.WHATSAPP || "").replace(/\D/g, "");
   const NUMERO_OK = /^55\d{10,11}$/.test(NUMERO);
@@ -19,7 +20,7 @@
     porcao:   '<path d="M5 10h14l-1.6 10H6.6z"/><path d="M8 10V4M11 10V3M14 10V4M17 10V5"/>',
     mais:     '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'
   };
-  const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[n] || ICONES.burger}</svg>`;
+  const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${Object.prototype.hasOwnProperty.call(ICONES, n) ? ICONES[n] : ICONES.burger}</svg>`;
   const PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const etiqueta = c => {
@@ -28,7 +29,7 @@
   };
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
   };
 
   /* ---------------- sacola (estado) ---------------- */
@@ -36,19 +37,27 @@
   let sacola = BP.validarSacola(store.get(CHAVE, []), cat);
 
   // Sempre relê o que está salvo antes de mudar (outra aba pode ter mexido) e valida depois.
+  // Se o navegador não consegue guardar (armazenamento cheio ou bloqueado), vale a sacola da memória:
+  // reler o que ficou salvo antes faria a sacola "esquecer" o que acabou de ser adicionado.
+  let gravando = true;
   function mudar(fn) {
-    const atual = BP.validarSacola(store.get(CHAVE, sacola), cat);
+    const atual = BP.validarSacola(gravando ? store.get(CHAVE, sacola) : sacola, cat);
     const nova = BP.validarSacola(fn(atual.map(l => ({ ...l, adds: [...l.adds] }))), cat);
-    sacola = nova; store.set(CHAVE, sacola); atualizarTudo();
+    sacola = nova; salvar(); atualizarTudo();
+  }
+  function salvar() {
+    const ok = store.set(CHAVE, sacola);
+    if (!ok && gravando && sacola.length) setTimeout(() => avisar("Seu navegador não está guardando a sacola. Ela continua aqui, mas some se você recarregar a página."), 0);
+    gravando = ok;
   }
   const qtdNaSacola = id => sacola.filter(l => l.id === id).reduce((s, l) => s + l.qtd, 0);
   const restante = () => LIMITES.itensSacola - BP.contar(sacola);
 
   /* ---------------- busca tolerante a erros ---------------- */
   const PARADAS = new Set(["de", "da", "do", "e", "com", "o", "a", "um", "uma", "no", "na", "em", "sem", "quero", "lanche", "lanches"]);
-  const SINONIMOS = { xis: "x", xes: "x", xese: "x", xs: "x", xiz: "x", bacom: "bacon", beicon: "bacon", beicom: "bacon",
+  const SINONIMOS = Object.assign(Object.create(null), { xis: "x", xes: "x", xese: "x", xs: "x", xiz: "x", bacom: "bacon", beicon: "bacon", beicom: "bacon",
     ovos: "ovo", eg: "ovo", amburgers: "amburger", burgers: "burger", frangos: "frango", porsoes: "porcao", porcoes: "porcao",
-    calabresas: "calabresa", queijos: "queijo", files: "file" };
+    calabresas: "calabresa", queijos: "queijo", files: "file" });
   function som(w) {
     w = fold(w).replace(/[^a-z0-9]/g, "");
     w = w.replace(/ph/g, "f").replace(/ch/g, "x").replace(/sh/g, "x").replace(/lh/g, "l").replace(/nh/g, "n")
@@ -120,8 +129,8 @@
     </div>`;
 
   const C = Array.isArray(window.CARDAPIO) ? window.CARDAPIO : [];
-  const secoes = C.map(c => ({ c, id: slug(c && c.categoria), itens: (c && Array.isArray(c.itens) ? c.itens : []).map(i => cat.itens[slug(c.categoria) + "/" + slug(i && i.nome)]).filter(Boolean) }))
-    .filter(s => s.id && s.itens.length);
+  const secoes = C.map(c => ({ c, id: "sec-" + slug(c && c.categoria), itens: (c && Array.isArray(c.itens) ? c.itens : []).map(i => cat.itens[slug(c.categoria) + "/" + slug(i && i.nome)]).filter(Boolean) }))
+    .filter(s => s.id !== "sec-" && s.itens.length);
 
   $("cats").innerHTML = secoes.map(s => `<a href="#${s.id}">${icon(s.c.icone)}${esc(s.c.categoria)}</a>`).join("");
 
@@ -263,7 +272,7 @@
     try { $("ovItem").querySelector("[data-close]").focus({ preventScroll: true }); } catch (e) {}
   }
   function ajustarUnidades() {
-    F.qtd = Math.min(Math.max(1, F.qtd), maxQtd());
+    F.qtd = Math.min(Math.max(1, Math.floor(Number(F.qtd)) || 1), maxQtd());
     F.un = Array.from({ length: F.qtd }, (_, i) => F.un[i] || novoJeito(F.comum.adds));
     if (F.qtd === 1) F.modo = null;
   }
@@ -362,7 +371,7 @@
     const t = e.target.closest("button"); if (!t || !sheetItem.contains(t)) return;
     if (t.dataset.setq) { F.qtd = Number(t.dataset.setq); ajustarUnidades(); renderItem(); return; }
     if (t.dataset.qd) { F.qtd += Number(t.dataset.qd); ajustarUnidades(); renderItem(); return; }
-    if (t.dataset.modo) {
+    if (t.dataset.modo === "iguais" || t.dataset.modo === "diferentes") {
       if (t.dataset.modo === "diferentes" && F.modo !== "diferentes") F.un = F.un.map(() => novoJeito(F.comum.adds));
       if (t.dataset.modo === "iguais" && F.modo === "diferentes") F.comum = novoJeito(F.un[0] ? F.un[0].adds : []);
       F.modo = t.dataset.modo; renderItem(); return;
@@ -462,10 +471,13 @@
   $("esvaziar").onclick = () => mudar(() => []);
 
   const nomeSalvo = () => limpar(store.get("bp-nome", ""), LIMITES.nome);
-  const linkWhats = () => `https://wa.me/${NUMERO}?text=${encodeURIComponent(BP.mensagem(sacola, $("nome").value, cat))}`;
+  const textoPedido = () => BP.mensagem(sacola, $("nome").value, cat);
+  const linkWhats = () => BP.urlWhats(NUMERO, textoPedido());
   function atualizarMsg() {
-    $("msg").innerHTML = esc(BP.mensagem(sacola, $("nome").value, cat)).replace(/\*([^*\n]+)\*/g, "<b>$1</b>");
-    $("enviar").href = NUMERO_OK ? linkWhats() : "#";
+    const txt = textoPedido(), l = BP.urlWhats(NUMERO, txt);
+    $("msg").innerHTML = esc(txt).replace(/\*([^*\n]+)\*/g, "<b>$1</b>");
+    $("msgLongo").hidden = !l.longo;
+    $("enviar").href = NUMERO_OK ? l.url : "#";
   }
   $("irNome").onclick = () => {
     if (!sacola.length) return;
@@ -486,10 +498,23 @@
     if (Date.now() - ultimoEnvio < 2000) { e.preventDefault(); return; }   // evita abrir duas vezes
     ultimoEnvio = Date.now();
     store.set("bp-nome", nome);
-    $("enviar").href = linkWhats();                                         // monta com a sacola mais recente
+    $("enviar").href = linkWhats().url;                                     // monta com a sacola mais recente
     setTimeout(() => passo("Ok"), 300);
   });
-  $("reabrir").onclick = () => { if (sacola.length) window.open(linkWhats(), "_blank", "noopener"); };
+  $("reabrir").onclick = () => { if (sacola.length) window.open(linkWhats().url, "_blank", "noopener"); };
+  // Plano B: copiar o pedido para colar na conversa (WhatsApp que não abre, computador sem WhatsApp, pedido grande)
+  function copiar(txt) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(txt);
+    return new Promise((ok, erro) => {
+      const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy") ? ok() : erro(); } catch (e) { erro(e); } finally { ta.remove(); }
+    });
+  }
+  document.querySelectorAll("[data-copiar]").forEach(b => b.addEventListener("click", () => {
+    if (!sacola.length) return;
+    copiar(textoPedido()).then(() => avisar("Pedido copiado! Cole na conversa do WhatsApp."), () => avisar("Não consegui copiar. Segure o texto da mensagem e escolha copiar."));
+  }));
   $("novo").onclick = () => { mudar(() => []); fechar("ovBag"); avisar("Sacola vazia. Bom apetite!"); };
 
   /* ---------------- atualizar tela ---------------- */
@@ -519,6 +544,6 @@
   });
 
   if (!NUMERO_OK) console.warn("WHATSAPP inválido em cardapio.js: use 55 + DDD + número, só dígitos.");
-  store.set(CHAVE, sacola);
+  salvar();
   atualizarTudo();
 })();

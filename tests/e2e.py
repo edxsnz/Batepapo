@@ -3,7 +3,7 @@ import json, re, sys, time
 from playwright.sync_api import sync_playwright
 
 URL = "http://127.0.0.1:8765/"
-AXE = open("node_modules/axe-core/axe.min.js").read()
+AXE = open(__import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)), "node_modules", "axe-core", "axe.min.js")).read()
 falhas, ok = [], 0
 
 def check(cond, nome):
@@ -77,11 +77,11 @@ with sync_playwright() as p:
     adicionar(pg, "X-Tudo", 2, adds=["Bacon"], obs="sem tomate")
     adicionar(pg, "X-Tudo", 1, adds=["Bacon"], obs="SEM TOMATE")   # igual: deve juntar
     check(pg.text_content("#bagN") == "6", "contador da sacola = 6")
-    check(pg.text_content("#bagV") == "R$ 121,50", f"total 3x14,50 + 3x(22+4) = R$ 121,50 ({pg.text_content('#bagV')})")
+    check(pg.text_content("#bagV") == "R$ 138,00", f"total 3x16 + 3x(24+6) = R$ 138,00 ({pg.text_content('#bagV')})")
     pg.click("#bagbtn"); pg.wait_for_selector("#ovBag:not([hidden])")
     check(pg.locator(".line").count() == 2, "linhas iguais foram juntadas")
     pg.click('.line:has-text("X-Milho") [data-q="-1"]'); pg.wait_for_timeout(50)
-    check(pg.text_content("#tot") == "R$ 107,00", "diminuir quantidade atualiza total")
+    check(pg.text_content("#tot") == "R$ 122,00", "diminuir quantidade atualiza total")
     pg.click('.line:has-text("X-Milho") [data-rm]'); pg.wait_for_timeout(50)
     check(pg.locator(".line").count() == 1, "remover tira só a linha certa")
     ctx.close()
@@ -112,7 +112,7 @@ with sync_playwright() as p:
       localStorage.setItem('bp-nome', JSON.stringify('<script>alert(1)</script>'))""")
     pg.reload(); pg.wait_for_timeout(300)
     check(pg.text_content("#bagN") == "32", f"quantidade limitada a 30 + 2 válidos ({pg.text_content('#bagN')})")
-    check(pg.text_content("#bagV") == "R$ 810,00", f"preço vem do cardápio, não do navegador ({pg.text_content('#bagV')})")
+    check(pg.text_content("#bagV") == "R$ 934,00", f"preço vem do cardápio, não do navegador ({pg.text_content('#bagV')})")
     pg.evaluate("localStorage.setItem('bp-sacola-v2', '{quebrado')"); pg.reload(); pg.wait_for_timeout(200)
     check(not pg._erros and pg.is_hidden("#bagbtn"), "dado corrompido não quebra o site")
     ctx.close()
@@ -189,7 +189,7 @@ with sync_playwright() as p:
     pg.click('#itBody .opt[data-k="0"]:has-text("Ovo")'); pg.click('#itFoot [data-acao="continuar"]')
     txt = pg.text_content("#itBody .resumo")
     check("1x" in txt and "X-Tudo com ovo a mais" in txt and "2x" in txt and "X-Tudo do jeito do cardápio" in txt, "conferência: 1 com ovo e 2 do jeito do cardápio")
-    check(pg.text_content('#itFoot .nw') == "R$ 69,00", "total da conferência 25 + 2x22 = R$ 69,00")
+    check(pg.text_content('#itFoot .nw') == "R$ 75,00", "total da conferência 3x24 + ovo 3 = R$ 75,00")
     pg.click('#itFoot [data-acao="voltar"]'); pg.click('#itFoot [data-acao="voltar"]')
     check(pg.locator('#itBody [data-modo="iguais"]').count() >= 1, "voltar retorna para a pergunta anterior")
     pg.click('#itBody [data-modo="diferentes"]'); pg.click('#itBody .opt[data-k="0"]:has-text("Ovo")'); pg.click('#itFoot [data-acao="continuar"]')
@@ -204,7 +204,7 @@ with sync_playwright() as p:
     check(pg.locator('[data-dica="tirar"]').count() == 1, 'percebe conflito: marcou bacon e escreveu "sem bacon"')
     check("já vem sem cebola" in body, "avisa que o X-Tudo não leva cebola")
     pg.click('[data-dica="tirar"]')
-    check(pg.text_content('#itFoot .nw') == "R$ 22,00", "tirar o adicional pela dica atualiza o valor")
+    check(pg.text_content('#itFoot .nw') == "R$ 24,00", "tirar o adicional pela dica atualiza o valor")
     pg.click('#ovItem [data-close]'); pg.wait_for_timeout(450)
 
     pg.locator('.pcard:has-text("Porção Mista") .add').click(); pg.wait_for_selector("#ovItem:not([hidden])")
@@ -244,6 +244,21 @@ with sync_playwright() as p:
     check(c.text_content(".tot strong") == total_site and c.locator(".alerta li").count() == 2, "linhas inventadas são apontadas e não mudam o valor")
     c.fill("#txt", "<img src=x onerror=window.__xss=1>\n*1x <script>alert(1)</script>*"); c.click("#calc"); c.wait_for_timeout(100)
     check(c.evaluate("window.__xss") is None and not c._erros, "colar código não executa nada")
+    ctx.close()
+
+    print("\n[11] Copiar pedido (plano B quando o WhatsApp não abre)")
+    ctx = b.new_context(permissions=["clipboard-read", "clipboard-write"]); pg = nova(ctx); pg.goto(URL)
+    adicionar(pg, "X-Burguer", 2); pg.click("#bagbtn"); pg.click("#irNome"); pg.fill("#nome", "Carla")
+    pg.click("#footNome [data-copiar]"); pg.wait_for_timeout(200)
+    copiado = pg.evaluate("navigator.clipboard.readText()")
+    check("*2x X-BURGUER*" in copiado and "*Cliente:* Carla" in copiado and "R$" not in copiado, "botão Copiar pedido copia a mensagem inteira, sem preço")
+    check("copiado" in pg.text_content("#toast").lower(), "avisa que copiou")
+    check(pg.locator("#msgLongo").is_hidden(), "pedido pequeno não mostra aviso de pedido grande")
+    ctx.close()
+
+    print("\n[12] Verificar cardápio")
+    ctx = b.new_context(); pg = nova(ctx); pg.goto(URL + "verificar.html"); pg.wait_for_timeout(300)
+    check("Tudo certo" in pg.text_content("#out") and not pg._erros, "página de verificação mostra o cardápio sem erros")
     ctx.close()
     b.close()
 

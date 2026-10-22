@@ -7,44 +7,59 @@
   const slug = s => fold(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   // Dinheiro sempre em centavos inteiros, para não ter erro de arredondamento (0.1 + 0.2).
+  // Aceita número (14.5) ou texto ("14,50" / "14.50" / "R$ 14,50"). Qualquer outra coisa (vazio, null, "abc") é recusada:
+  // um preço em branco nunca pode virar "lanche grátis".
   const centavos = v => {
-    const n = Number(v);
+    let n = v;
+    if (typeof v === "string") {
+      const m = v.trim().match(/^(?:R\$\s*)?(\d{1,5})(?:[.,](\d{1,2}))?$/);
+      n = m ? Number(m[1] + "." + (m[2] || "0")) : NaN;
+    } else if (typeof v !== "number") return null;
     return Number.isFinite(n) && n >= 0 && n < 100000 ? Math.round(n * 100) : null;
   };
   const brl = c => {
-    c = Math.max(0, Math.round(c));
+    c = Number.isFinite(c) ? Math.max(0, Math.round(c)) : 0;
     return "R$ " + Math.floor(c / 100).toLocaleString("pt-BR") + "," + String(c % 100).padStart(2, "0");
   };
 
-  // Texto digitado pelo cliente: tira quebras de linha, caracteres invisíveis, inversão de direção
-  // e os símbolos de formatação do WhatsApp (* _ ~ `), para ninguém "desenhar" itens falsos na mensagem.
-  const limpar = (s, max) => String(s == null ? "" : s)
-    .normalize("NFC")
-    .replace(/[\u0000-\u001F\u007F-\u009F\u00AD\u200B-\u200F\u2028-\u202E\u2060-\u2069\uFEFF]/g, " ")
-    .replace(/[*_~`]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, max);
+  // Texto digitado pelo cliente: tira quebras de linha, caracteres invisíveis (inclusive os "tag" escondidos),
+  // inversão de direção, os símbolos de formatação do WhatsApp (* _ ~ `) e pedaços soltos de emoji,
+  // para ninguém "desenhar" itens falsos na mensagem nem quebrar o link do WhatsApp.
+  const FAIXAS_INVISIVEIS = [[0, 31], [127, 159], [173, 173], [847, 847], [1564, 1564], [4447, 4448], [6068, 6069], [6155, 6158],
+    [8203, 8207], [8232, 8238], [8288, 8297], [12644, 12644], [65024, 65039], [65279, 65279], [65440, 65440], [65529, 65531], [917504, 917631]];
+  const INVISIVEIS = new RegExp("[" + FAIXAS_INVISIVEIS.map(([a, b]) => String.fromCodePoint(a) + "-" + String.fromCodePoint(b)).join("") + "]", "gu");
+  const limpar = (s, max) => {
+    let t = String(s == null ? "" : s).slice(0, max * 8 + 64);          // texto gigante: só olha o começo
+    t = t.normalize("NFC").replace(INVISIVEIS, " ").replace(/[*_~`]/g, "");
+    const cs = Array.from(t).filter(c => c.length > 1 || (c.charCodeAt(0) & 0xF800) !== 0xD800);   // some com emoji cortado ao meio
+    const limpo = cs.join("").replace(/\s+/g, " ").trim();
+    return Array.from(limpo).slice(0, max).join("").trim();           // corta por letra/emoji inteiro, nunca no meio
+  };
 
   const LIMITES = { qtdItem: 30, itensSacola: 60, linhas: 40, nome: 40, obs: 80 };
 
-  // Lê o cardapio.js e monta um catálogo validado. Itens com preço inválido ou nome repetido são ignorados.
+  // Lê o cardapio.js e monta um catálogo validado. Itens com preço inválido, sem nome ou repetidos são ignorados
+  // (e avisados no console), então um erro de digitação num item nunca derruba o site inteiro.
   function catalogo(C) {
     const itens = Object.create(null), lista = [], adicionais = [], avisos = [], nomes = new Set();
     (Array.isArray(C) ? C : []).forEach(c => {
-      if (!c || !c.categoria || !Array.isArray(c.itens)) return;
+      if (!c || typeof c.categoria !== "string" || !Array.isArray(c.itens)) return;
+      const categoria = limpar(c.categoria, 60), catSlug = slug(categoria);
+      if (!catSlug) return;
       const tipo = c.icone === "mais" ? "adicional" : c.icone === "porcao" ? "porcao" : "lanche";
       c.itens.forEach(i => {
-        if (!i || !i.nome) return;
+        if (!i || typeof i.nome !== "string") return;
+        const nome = limpar(i.nome, 60);
+        if (!nome) return;
         const preco = centavos(i.preco);
-        if (preco === null) { avisos.push(`Preço inválido em "${i.nome}"`); return; }
-        const chaveNome = tipo + ":" + fold(i.nome).replace(/[^a-z0-9]/g, "");
-        if (nomes.has(chaveNome)) { avisos.push(`Nome repetido: "${i.nome}"`); return; }
+        if (preco === null) { avisos.push(`Preço inválido em "${nome}"`); return; }
+        const id = catSlug + "/" + slug(nome), chaveNome = tipo + ":" + fold(nome).replace(/[^a-z0-9]/g, "");
+        if (!slug(nome) || nomes.has(chaveNome) || itens[id]) { avisos.push(`Nome repetido: "${nome}"`); return; }
         nomes.add(chaveNome);
         const it = Object.freeze({
-          id: slug(c.categoria) + "/" + slug(i.nome), nome: String(i.nome), preco,
-          ingredientes: i.ingredientes ? String(i.ingredientes) : "", destaque: i.destaque ? String(i.destaque) : "",
-          categoria: String(c.categoria), tipo
+          id, nome, preco,
+          ingredientes: typeof i.ingredientes === "string" ? i.ingredientes : "", destaque: typeof i.destaque === "string" ? limpar(i.destaque, 40) : "",
+          categoria, tipo
         });
         itens[it.id] = it;
         (tipo === "adicional" ? adicionais : lista).push(it);
@@ -60,14 +75,14 @@
     let total = 0;
     (Array.isArray(bruta) ? bruta : []).slice(0, LIMITES.linhas).forEach(l => {
       if (!l || typeof l !== "object") return;
-      const it = cat.itens[l.id];
+      const it = typeof l.id === "string" ? cat.itens[l.id] : null;
       if (!it || it.tipo === "adicional") return;
-      let qtd = Math.floor(Number(l.qtd));
+      let qtd = typeof l.qtd === "number" || typeof l.qtd === "string" ? Math.floor(Number(l.qtd)) : NaN;
       if (!Number.isFinite(qtd) || qtd < 1) return;
       qtd = Math.min(qtd, LIMITES.qtdItem, LIMITES.itensSacola - total);
       if (qtd < 1) return;
       const adds = it.tipo === "lanche"
-        ? [...new Set((Array.isArray(l.adds) ? l.adds : []).filter(a => cat.itens[a] && cat.itens[a].tipo === "adicional"))].sort()
+        ? [...new Set((Array.isArray(l.adds) ? l.adds : []).filter(a => typeof a === "string" && cat.itens[a] && cat.itens[a].tipo === "adicional"))].sort()
         : [];
       const obs = limpar(l.obs, LIMITES.obs);
       const linha = { id: it.id, qtd, adds, obs };
@@ -167,35 +182,49 @@
   }
 
   // Lê uma mensagem de pedido colada e recalcula com os preços oficiais.
+  // Quem cola pode ter editado a mensagem à mão: tudo que fugir do que o site gera (quantidade fora do limite,
+  // adicional repetido, pedido grande demais, texto enorme) é apontado em "estranhas" e NÃO entra na conta.
+  const MAX_TEXTO = 20000, MAX_LINHA = 300;
   function lerMensagem(texto, cat) {
     const porNome = Object.create(null);
     Object.values(cat.itens).forEach(it => { porNome[it.tipo + ":" + fold(it.nome).replace(/[^a-z0-9]/g, "")] = it; });
     const k = (tipo, n) => tipo + ":" + fold(n).replace(/[^a-z0-9]/g, "");
     const linhas = [], estranhas = [];
-    let cliente = "", atual = null;
-    String(texto || "").split(/\r?\n/).forEach(raw => {
-      const t = raw.replace(/[*_~`]/g, "").replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g, "").trim();
+    let cliente = "", atual = null, itens = 0;
+    const todo = String(texto == null ? "" : texto), cortado = todo.length > MAX_TEXTO;
+    todo.slice(0, MAX_TEXTO).split(/\r?\n/).forEach(raw => {
+      const t = raw.length > MAX_LINHA ? "" : raw.replace(/[*_~`]/g, "").replace(INVISIVEIS, " ").trim();
+      if (raw.length > MAX_LINHA) { atual = null; estranhas.push(raw.trim().slice(0, 120)); return; }
       if (!t || /^-{5,}$/.test(t) || /^pedido\s*-\s*lanchonete/i.test(t) || /^aguardo a confirma/i.test(t)) return;
       let m;
-      if ((m = t.match(/^cliente:\s*(.*)$/i))) { cliente = m[1]; return; }
-      if ((m = t.match(/^(\d{1,3})\s*x\s+(.+)$/i))) {
-        const it = porNome[k("lanche", m[2])] || porNome[k("porcao", m[2])];
-        if (it) { atual = { item: it, qtd: Number(m[1]), adds: [], obs: "" }; linhas.push(atual); }
-        else { atual = null; estranhas.push(raw.trim()); }
+      if ((m = t.match(/^cliente:\s*(.*)$/i))) { cliente = limpar(m[1], LIMITES.nome); return; }
+      if ((m = t.match(/^(\d{1,4})\s*x\s+(.+)$/i))) {
+        const it = porNome[k("lanche", m[2])] || porNome[k("porcao", m[2])], qtd = Number(m[1]);
+        if (it && qtd >= 1 && qtd <= LIMITES.qtdItem && itens + qtd <= LIMITES.itensSacola && linhas.length < LIMITES.linhas) {
+          atual = { item: it, qtd, adds: [], obs: "" }; linhas.push(atual); itens += qtd;
+        } else { atual = null; estranhas.push(raw.trim()); }
         return;
       }
       if ((m = t.match(/^\+\s*adicional de\s+(.+?)(\s*\(em cada\))?$/i)) && atual && atual.item.tipo === "lanche") {
         const a = porNome[k("adicional", m[1])];
-        if (a) atual.adds.push(a); else estranhas.push(raw.trim());
+        if (a && !atual.adds.includes(a)) atual.adds.push(a); else estranhas.push(raw.trim());
         return;
       }
-      if ((m = t.match(/^obs:\s*(.*)$/i)) && atual) { atual.obs = m[1]; return; }
+      if ((m = t.match(/^obs:\s*(.*)$/i)) && atual) { atual.obs = limpar(m[1], LIMITES.obs); return; }
       if (/^do jeito do card[aá]pio$/i.test(t) && atual) return;
-      estranhas.push(raw.trim());
+      estranhas.push(raw.trim().slice(0, 120));
     });
+    if (cortado) estranhas.push("(a mensagem era grande demais: só o começo foi conferido)");
     linhas.forEach(l => { l.unit = l.item.preco + l.adds.reduce((s, a) => s + a.preco, 0); l.subtotal = l.unit * l.qtd; });
-    return { cliente, linhas, estranhas, total: linhas.reduce((s, l) => s + l.subtotal, 0) };
+    return { cliente, linhas, estranhas, cortado, total: linhas.reduce((s, l) => s + l.subtotal, 0) };
   }
 
-  root.BP = Object.freeze({ fold, slug, centavos, brl, limpar, LIMITES, catalogo, validarSacola, chave, precoLinha, totalSacola, contar, mensagem, agrupar, frase, dicasObs, lerMensagem });
+  // Link do WhatsApp. Se o texto ficar muito grande para um link, avisa (o site oferece "Copiar pedido").
+  const LIMITE_URL = 4000;
+  function urlWhats(numero, texto) {
+    const url = "https://wa.me/" + numero + "?text=" + encodeURIComponent(texto);
+    return { url, longo: url.length > LIMITE_URL };
+  }
+
+  root.BP = Object.freeze({ fold, slug, centavos, brl, limpar, LIMITES, catalogo, validarSacola, chave, precoLinha, totalSacola, contar, mensagem, agrupar, frase, dicasObs, lerMensagem, urlWhats });
 })(typeof window !== "undefined" ? window : globalThis);

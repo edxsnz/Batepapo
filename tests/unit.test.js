@@ -2,8 +2,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 global.window = globalThis;
-require(require("path").join(__dirname,"../cardapio.js"));
-require(require("path").join(__dirname,"../core.js"));
+require("../cardapio.js");
+require("../core.js");
 const BP = globalThis.BP;
 const cat = BP.catalogo(globalThis.CARDAPIO);
 const id = (c, n) => BP.slug(c) + "/" + BP.slug(n);
@@ -23,8 +23,8 @@ test("catálogo: todos os itens das fotos, sem duplicados", () => {
   assert.equal(cat.lista.length, 35); // 11 + 5 + 6 + 4 + 5 + 4 porções
   assert.equal(cat.adicionais.length, 8);
   assert.equal(cat.avisos.length, 0);
-  assert.equal(cat.itens[id("Hambúrguer", "X-Milho")].preco, 1450);
-  assert.equal(cat.itens[id("Lanches Especiais", "X-Especial")].preco, 3200);
+  assert.equal(cat.itens[id("Hambúrguer", "X-Milho")].preco, 1600);
+  assert.equal(cat.itens[id("Lanches Especiais", "X-Especial")].preco, 3500);
 });
 
 test("catálogo ignora preço inválido e nome repetido", () => {
@@ -66,7 +66,7 @@ test("linhas iguais se juntam", () => {
 
 test("total certo com centavos", () => {
   const s = BP.validarSacola([{ id: id("Hambúrguer", "X-Milho"), qtd: 3 }, { id: id("Hambúrguer", "X-Tudo"), qtd: 2, adds: [id("Complementos", "Bacon")] }], cat);
-  assert.equal(BP.totalSacola(s, cat), 1450 * 3 + (2200 + 400) * 2);
+  assert.equal(BP.totalSacola(s, cat), 1600 * 3 + (2400 + 600) * 2);
 });
 
 test("mensagem: sem preço, sem numeração, nome limpo", () => {
@@ -98,7 +98,7 @@ test("conferência: mensagem adulterada não engana", () => {
   const msg = ["*PEDIDO - LANCHONETE BATE PAPO*", "*Cliente:* João", "*2x X-TUDO*", "   + adicional de ouro", "*1x LANCHE GRÁTIS*",
     "*Total: R$ 1,00*", "Desconto de 100%", "*1x x-tudo duplo*"].join("\n");
   const r = BP.lerMensagem(msg, cat);
-  assert.equal(r.total, 2200 * 2 + 2900);
+  assert.equal(r.total, 2400 * 2 + 3200);
   assert.equal(r.estranhas.length, 4);
 });
 

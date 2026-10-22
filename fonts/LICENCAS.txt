@@ -1,0 +1,5 @@
+Fontes usadas neste site (todas gratuitas, licença SIL Open Font License 1.1 — https://openfontlicense.org):
+- Bowlby One      — Vernon Adams
+- Barlow Condensed — Jeremy Tribby
+- Figtree         — Erik D. Kennedy
+Arquivos obtidos dos pacotes Fontsource (https://fontsource.org).
