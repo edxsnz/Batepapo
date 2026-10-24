@@ -3,7 +3,7 @@ import json, re, sys, time
 from playwright.sync_api import sync_playwright
 
 URL = "http://127.0.0.1:8765/"
-AXE = open(__import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)), "node_modules", "axe-core", "axe.min.js")).read()
+AXE = open("/home/claude/tests/node_modules/axe-core/axe.min.js").read()
 falhas, ok = [], 0
 
 def check(cond, nome):
@@ -179,9 +179,18 @@ with sync_playwright() as p:
 
     print("\n[11] Conversa guiada (o site ajuda o cliente)")
     ctx = b.new_context(); pg = nova(ctx); pg.goto(URL)
-    check(pg.locator("#boas").count() == 1, "mostra boas-vindas na primeira visita")
-    pg.click("#boasFechar"); pg.reload(); pg.wait_for_timeout(200)
-    check(pg.locator("#boas").count() == 0, "boas-vindas não volta depois de fechar")
+    check(pg.locator("#como").evaluate("e => e.open") and pg.locator("#como").is_visible(), "primeira visita: quadro 'Como fazer seu pedido' aberto")
+    txt = pg.text_content("#como")
+    check("pedir seu lanche pelo celular" in txt and "WhatsApp" in txt and "Pedir" in txt, "quadro explica que dá para pedir, como e pelo WhatsApp")
+    check(pg.locator(".item .add").first.text_content().strip() == "Pedir" and pg.locator(".pcard .add").first.text_content().strip() == "Pedir", "os botões dos lanches e porções dizem 'Pedir'")
+    check("pedido" in pg.locator(".hero-sub").text_content().lower(), "a capa diz que dá para fazer o pedido aqui")
+    check(pg.get_attribute("#zapDireto", "href") == "https://wa.me/551633823518", "link 'chame a lanchonete no WhatsApp' aponta para o número certo")
+    set_busca = pg.fill("#busca", "bacon"); pg.wait_for_timeout(100)
+    check(pg.locator("#como").is_hidden(), "durante a busca o quadro some para não atrapalhar"); pg.fill("#busca", ""); pg.wait_for_timeout(100)
+    check(pg.locator("#como").is_visible(), "ao limpar a busca o quadro volta")
+    pg.click("#como summary"); pg.wait_for_timeout(150); pg.reload(); pg.wait_for_timeout(200)
+    check(not pg.locator("#como").evaluate("e => e.open"), "quem fechou o quadro não vê ele aberto de novo")
+    pg.click("#como summary"); pg.wait_for_timeout(100); check(pg.locator("#como").evaluate("e => e.open"), "dá para reabrir o quadro quando quiser")
     abrir_item(pg, "X-Tudo"); pg.click('#itBody [data-setq="3"]'); pg.click('#itFoot [data-acao="continuar"]')
     check("vão todos iguais" in pg.text_content("#itBody"), "com 3 lanches pergunta se vão todos iguais")
     pg.click('#itBody [data-modo="iguais"]'); pg.click('#itBody .opt[data-k="c"]:has-text("Ovo")')

@@ -4,8 +4,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 global.window = globalThis;
-require("../cardapio.js");
-require("../core.js");
+require("/home/claude/site/cardapio.js");
+require("/home/claude/site/core.js");
 const BP = globalThis.BP;
 const cat = BP.catalogo(globalThis.CARDAPIO);
 const L = BP.LIMITES;

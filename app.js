@@ -47,7 +47,7 @@
   }
   function salvar() {
     const ok = store.set(CHAVE, sacola);
-    if (!ok && gravando && sacola.length) setTimeout(() => avisar("Seu navegador não está guardando a sacola. Ela continua aqui, mas some se você recarregar a página."), 0);
+    if (!ok && gravando && sacola.length) setTimeout(() => avisar("Seu navegador não está guardando o pedido. Ele continua aqui, mas some se você recarregar a página.", 6000), 0);
     gravando = ok;
   }
   const qtdNaSacola = id => sacola.filter(l => l.id === id).reduce((s, l) => s + l.qtd, 0);
@@ -115,7 +115,7 @@
   /* ---------------- desenhar cardápio ---------------- */
   const AVATAR0 = `<span class="avatar" aria-hidden="true">${icon("burger")}</span>`;
   const tagSacola = id => `<span class="incart" data-incart="${esc(id)}" hidden></span>`;
-  const btnAdd = it => `<button class="add" type="button" data-id="${esc(it.id)}" aria-label="Adicionar ${esc(it.nome)}">${PLUS}</button>`;
+  const btnAdd = it => `<button class="add" type="button" data-id="${esc(it.id)}" aria-label="Pedir ${esc(it.nome)}">${PLUS}<span>Pedir</span></button>`;
   const linhaItem = (it, mostrarCat) => `
     <div class="item" data-id="${esc(it.id)}">
       <div>
@@ -142,14 +142,12 @@
         <div class="promo-kicker">${esc(it.destaque)}</div>
         <h2 class="promo-name">${esc(it.nome)}</h2>
         ${it.ingredientes ? `<p class="promo-desc">${esc(it.ingredientes)}</p>` : ""}
-        <div class="promo-row"><span class="sr-only">${brl(it.preco)}</span><button class="promo-btn add" type="button" data-id="${esc(it.id)}">Quero esse</button></div>
+        <div class="promo-row"><span class="sr-only">${brl(it.preco)}</span><button class="promo-btn add" type="button" data-id="${esc(it.id)}">Pedir este lanche</button></div>
         ${tagSacola(it.id)}
       </div>
     </article>`).join("");
 
-  let jaViu = false; try { jaViu = localStorage.getItem("bp-boasvindas") === "1"; } catch (e) {}
-  const boasVindas = jaViu || !cat.lista.length ? "" : `<div class="boas" id="boas">${`<div class="bolha">${AVATAR0}<div class="fala">Oi! Eu te ajudo a montar o pedido. É só tocar no <b>+</b> do lanche, responder umas perguntinhas e mandar pelo WhatsApp.</div></div>`}<button class="x" type="button" id="boasFechar" aria-label="Fechar dica">×</button></div>`;
-  $("menu").innerHTML = boasVindas + (cat.lista.length ? "" : `<div class="nores"><strong>Cardápio indisponível</strong>Tente de novo em instantes.</div>`) + promo +
+  $("menu").innerHTML = (cat.lista.length ? "" : `<div class="nores"><strong>Cardápio indisponível</strong>Tente de novo em instantes.</div>`) + promo +
     secoes.map(({ c, id, itens }) => {
       const head = `<div class="sec-head"><div class="badge">${icon(c.icone)}</div>
         <div class="sec-title"><h2>${esc(c.categoria)}</h2><div class="sec-sub">${esc(c.subtitulo || itens.length + (itens.length === 1 ? " opção" : " opções"))}</div></div>
@@ -165,15 +163,21 @@
       return `<section id="${id}">${head}${body}</section>`;
     }).join("");
 
-  const bf = $("boasFechar");
-  if (bf) bf.addEventListener("click", () => { $("boas").remove(); try { localStorage.setItem("bp-boasvindas", "1"); } catch (e) {} });
+  /* quadro "Como fazer seu pedido": aberto na primeira visita; quem já sabe pode fechar e ele lembra */
+  const como = $("como");
+  if (como) {
+    try { if (localStorage.getItem("bp-como") === "0") como.open = false; } catch (e) {}
+    como.addEventListener("toggle", () => { try { localStorage.setItem("bp-como", como.open ? "1" : "0"); } catch (e) {} });
+    const zap = $("zapDireto");
+    if (zap && NUMERO_OK) { zap.href = "https://wa.me/" + NUMERO; zap.hidden = false; }
+  }
 
   /* busca na tela */
   const busca = $("busca");
   function mostrarBusca() {
     const q = busca.value.trim();
     $("limpar").hidden = !q;
-    $("menu").hidden = !!q; $("resultados").hidden = !q; $("cats").hidden = !!q;
+    $("menu").hidden = !!q; $("resultados").hidden = !q; $("cats").hidden = !!q; if (como) como.hidden = !!q;
     if (!q) { $("resultados").innerHTML = ""; return; }
     const r = buscar(q);
     $("resultados").innerHTML = r.length
@@ -206,7 +210,7 @@
 
   /* ---------------- avisos ---------------- */
   let toastT;
-  function avisar(t) { const el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 2600); }
+  function avisar(t, ms) { const el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms || 3200); }
 
   /* ---------------- janelas (com botão voltar do celular) ---------------- */
   let travaCliqueAte = 0, ultimoFoco = null;
@@ -265,7 +269,7 @@
 
   function abrirItem(id) {
     const it = cat.itens[id]; if (!it || it.tipo === "adicional") return;
-    if (restante() < 1) { avisar(`Sua sacola já tem ${LIMITES.itensSacola} itens, que é o máximo por pedido. Para mais, fale direto com a lanchonete no WhatsApp.`); return; }
+    if (restante() < 1) { avisar(`Seu pedido já tem ${LIMITES.itensSacola} itens, que é o máximo por pedido. Para mais, fale direto com a lanchonete no WhatsApp.`, 6000); return; }
     F = { it, passo: "qtd", qtd: 1, modo: null, comum: novoJeito(), un: [], adicionando: false };
     $("itNome").textContent = it.nome;
     $("itDesc").textContent = it.ingredientes || "";
@@ -351,7 +355,7 @@
         <ul class="resumo">${ls.map(l => `<li><span class="q">${l.qtd}x</span><div><b>${esc(BP.frase(l, cat).replace(/^\d+ /, ""))}</b>${l.obs ? `<small>Obs: ${esc(l.obs)}</small>` : ""}</div><span class="v">${brl(BP.precoLinha(l, cat))}</span></li>`).join("")}</ul>
         ${dicas.map(d => fala(esc(d.texto) + acaoDica(d), "dica")).join("")}`;
       foot = `<div class="foot-row"><button class="big ghost" type="button" data-acao="voltar">Corrigir</button>
-        <button class="big add-btn" type="button" data-acao="confirmar"><span>Pôr na sacola</span><span class="nw">${brl(totalFluxo())}</span></button></div>`;
+        <button class="big add-btn" type="button" data-acao="confirmar"><span>Adicionar ao pedido</span><span class="nw">${brl(totalFluxo())}</span></button></div>`;
     }
     $("itDesc").hidden = F.passo === "confere";
     $("itBody").innerHTML = body; $("itFoot").innerHTML = foot;
@@ -415,9 +419,9 @@
     mudar(s => s.concat(ls));
     const entrou = BP.contar(sacola) - antes;
     fechar("ovItem");
-    if (entrou < pedido) avisar(`Só cabem ${LIMITES.itensSacola} itens por pedido. Entraram ${entrou}.`);
-    else if (juntou) avisar(`Juntei com o que já estava na sacola. Agora são ${qtdNaSacola(F.it.id)} ${nome}.`);
-    else avisar(`Pronto! ${entrou}x ${nome} na sacola.`);
+    if (entrou < pedido) avisar(`Só cabem ${LIMITES.itensSacola} itens por pedido. Entraram ${entrou}.`, 6000);
+    else if (juntou) avisar(`Juntei com o que já estava no seu pedido. Agora são ${qtdNaSacola(F.it.id)} ${nome}. Quando terminar, toque em "Ver meu pedido".`, 7000);
+    else avisar(`Pronto! ${entrou}x ${nome} no seu pedido. Pode escolher mais lanches ou tocar em "Ver meu pedido" para enviar.`, 7000);
     const bb = $("bagbtn"); bb.classList.remove("bump"); void bb.offsetWidth; bb.classList.add("bump");
   }
 
@@ -432,17 +436,17 @@
   function passo(p) {
     passoAtual = p;
     ["Bag", "Nome", "Ok"].forEach(s => { $("step" + s).hidden = s !== p; $("foot" + s).hidden = s !== p; });
-    $("bagTitle").textContent = p === "Nome" ? "Quase pronto" : p === "Ok" ? "Pedido pronto" : "Sua sacola";
+    $("bagTitle").textContent = p === "Nome" ? "Quase pronto" : p === "Ok" ? "Pedido pronto" : "Seu pedido";
     $("bagHint").hidden = p !== "Bag";
   }
   function desenharSacola() {
     const vazia = !sacola.length;
     $("esvaziar").hidden = vazia; $("footBag").hidden = vazia || passoAtual !== "Bag";
-    if (vazia) { $("bagFala").innerHTML = fala("Sua sacola está vazia. Toque no <b>+</b> de um lanche que eu te ajudo a montar."); $("lines").innerHTML = ""; return; }
+    if (vazia) { $("bagFala").innerHTML = fala("Seu pedido ainda está vazio. Volte ao cardápio e toque em <b>Pedir</b> no lanche que você quer. Eu te ajudo a montar."); $("lines").innerHTML = ""; return; }
     const ordem = BP.agrupar(sacola), n = BP.contar(sacola);
     const separados = [...new Set(sacola.map(l => l.id))].filter(id => sacola.filter(l => l.id === id).length > 1);
     const muitos = sacola.filter(l => l.qtd >= 6);
-    let conversa = `Você tem <b>${n} ${n === 1 ? "item" : "itens"}</b> na sacola. Dá para mudar a quantidade com o − e o +.`;
+    let conversa = `Você tem <b>${n} ${n === 1 ? "item" : "itens"}</b> no seu pedido. Dá para mudar a quantidade com o − e o +. Estando tudo certo, toque em <b>Pedir pelo WhatsApp</b>.`;
     if (separados.length) conversa += ` Os ${separados.map(id => esc(cat.itens[id].nome)).join(" e ")} aparecem separados porque vão de jeitos diferentes. Está certinho assim.`;
     $("bagFala").innerHTML = fala(conversa) + muitos.map(l => fala(`Só conferindo: são <b>${l.qtd} ${esc(cat.itens[l.id].nome)}</b> mesmo?`, "aviso")).join("");
     $("lines").innerHTML = ordem.map(l => {
@@ -516,12 +520,12 @@
     if (!sacola.length) return;
     copiar(textoPedido()).then(() => avisar("Pedido copiado! Cole na conversa do WhatsApp."), () => avisar("Não consegui copiar. Segure o texto da mensagem e escolha copiar."));
   }));
-  $("novo").onclick = () => { mudar(() => []); fechar("ovBag"); avisar("Sacola vazia. Bom apetite!"); };
+  $("novo").onclick = () => { mudar(() => []); fechar("ovBag"); avisar("Tudo certo! Bom apetite!"); };
 
   /* ---------------- atualizar tela ---------------- */
   function marcarSacola() {
     document.querySelectorAll("[data-incart]").forEach(el => {
-      const q = qtdNaSacola(el.dataset.incart); el.hidden = !q; if (q) el.textContent = "✓ " + q + " na sacola";
+      const q = qtdNaSacola(el.dataset.incart); el.hidden = !q; if (q) el.textContent = "✓ " + q + " no seu pedido";
     });
   }
   function atualizarTudo() {
@@ -529,7 +533,7 @@
     $("bagbtn").hidden = !n;
     $("bagN").textContent = n;
     $("bagV").textContent = brl(tot);
-    $("bagSub").textContent = (n === 1 ? "1 item" : n + " itens") + " · toque para pedir";
+    $("bagSub").textContent = (n === 1 ? "1 item" : n + " itens") + " · toque aqui para enviar";
     $("tot").textContent = brl(tot);
     marcarSacola();
     if (aberta() === "ovBag") {
