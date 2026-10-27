@@ -92,7 +92,7 @@ window.CARDAPIO = [
   {
     categoria: "Complementos",
     icone: "mais",
-    subtitulo: "Escolha ao adicionar seu lanche",
+    subtitulo: "Extras para o seu lanche",
     itens: [
       { nome: "Ovo",        preco: 3 },
       { nome: "Hambúrguer", preco: 7 },

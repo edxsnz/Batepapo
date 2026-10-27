@@ -112,6 +112,17 @@
     return out.sort((a, b) => b.score - a.score).map(r => r.it);
   }
 
+  /* ingredientes: lista limpa com pontos e os molhos numa linha à parte (só na tela; o texto original não muda) */
+  const DESC_CACHE = new Map();
+  function descHtml(txt) {
+    txt = String(txt || ""); if (DESC_CACHE.has(txt)) return DESC_CACHE.get(txt);
+    const m = /,?\s*(Maionese,\s*Ketchup e Mostarda)\s*$/i.exec(txt);
+    const base = m ? txt.slice(0, m.index) : txt;
+    const lista = base.split(",").map(s => s.trim()).filter(Boolean).map(s => `<span class="i">${esc(s)}</span>`).join('<i class="sep"> · </i>');
+    const out = `<span class="ings">${lista}</span>` + (m ? `<span class="molhos">Com maionese, ketchup e mostarda</span>` : "");
+    DESC_CACHE.set(txt, out); return out;
+  }
+
   /* ---------------- desenhar cardápio ---------------- */
   const AVATAR0 = `<span class="avatar" aria-hidden="true">${icon("burger")}</span>`;
   const tagSacola = id => `<span class="incart" data-incart="${esc(id)}" hidden></span>`;
@@ -122,7 +133,7 @@
         ${mostrarCat ? `<div class="cat-label">${esc(it.categoria)}</div>` : ""}
         <div class="top"><span class="name">${esc(it.nome)}</span><span class="dots"></span>${etiqueta(it.preco)}</div>
         ${it.destaque ? `<span class="selo">${esc(it.destaque)}</span>` : ""}
-        ${it.ingredientes ? `<div class="desc">${esc(it.ingredientes)}</div>` : ""}
+        ${it.ingredientes ? `<div class="desc">${descHtml(it.ingredientes)}</div>` : ""}
         ${tagSacola(it.id)}
       </div>
       ${btnAdd(it)}
@@ -141,7 +152,7 @@
       <div class="promo-body">
         <div class="promo-kicker">${esc(it.destaque)}</div>
         <h2 class="promo-name">${esc(it.nome)}</h2>
-        ${it.ingredientes ? `<p class="promo-desc">${esc(it.ingredientes)}</p>` : ""}
+        ${it.ingredientes ? `<p class="promo-desc">${descHtml(it.ingredientes)}</p>` : ""}
         <div class="promo-row"><span class="sr-only">${brl(it.preco)}</span><button class="promo-btn add" type="button" data-id="${esc(it.id)}">Pedir este lanche</button></div>
         ${tagSacola(it.id)}
       </div>
@@ -155,7 +166,7 @@
       let body;
       if (c.icone === "porcao") body = `<div class="cards">${itens.map(it => `
         <div class="pcard" data-id="${esc(it.id)}"><span class="name">${esc(it.nome)}</span>
-          ${it.ingredientes ? `<div class="desc">${esc(it.ingredientes)}</div>` : ""}
+          ${it.ingredientes ? `<div class="desc">${descHtml(it.ingredientes)}</div>` : ""}
           ${tagSacola(it.id)}
           <div class="row">${etiqueta(it.preco)}${btnAdd(it)}</div></div>`).join("")}</div>`;
       else if (c.icone === "mais") body = `<div class="chips">${itens.map(it => `<div class="chip"><span class="name">${esc(it.nome)}</span>${etiqueta(it.preco)}</div>`).join("")}</div>`;
@@ -176,7 +187,7 @@
   const busca = $("busca");
   function mostrarBusca() {
     const q = busca.value.trim();
-    $("limpar").hidden = !q;
+    $("limpar").hidden = !q; if (typeof desenharRepetir === "function") desenharRepetir();
     $("menu").hidden = !!q; $("resultados").hidden = !q; $("cats").hidden = !!q; if (como) como.hidden = !!q;
     if (!q) { $("resultados").innerHTML = ""; return; }
     const r = buscar(q);
@@ -272,7 +283,7 @@
     if (restante() < 1) { avisar(`Seu pedido já tem ${LIMITES.itensSacola} itens, que é o máximo por pedido. Para mais, fale direto com a lanchonete no WhatsApp.`, 6000); return; }
     F = { it, passo: "qtd", qtd: 1, modo: null, comum: novoJeito(), un: [], adicionando: false };
     $("itNome").textContent = it.nome;
-    $("itDesc").textContent = it.ingredientes || "";
+    $("itDesc").innerHTML = descHtml(it.ingredientes);
     renderItem(); abrir("ovItem");
     try { $("ovItem").querySelector("[data-close]").focus({ preventScroll: true }); } catch (e) {}
   }
@@ -503,6 +514,7 @@
     if (Date.now() - ultimoEnvio < 2000) { e.preventDefault(); return; }   // evita abrir duas vezes
     ultimoEnvio = Date.now();
     store.set("bp-nome", nome);
+    store.set("bp-ultimo", sacola.map(l => ({ ...l, adds: [...l.adds] })));
     $("enviar").href = linkWhats().url;                                     // monta com a sacola mais recente
     setTimeout(() => passo("Ok"), 300);
   });
@@ -522,6 +534,23 @@
   }));
   $("novo").onclick = () => { mudar(() => []); fechar("ovBag"); avisar("Tudo certo! Bom apetite!"); };
 
+
+  /* ---------------- repetir o último pedido ---------------- */
+  const repetirEl = $("repetir");
+  const ultimoPedido = () => BP.validarSacola(store.get("bp-ultimo", []), cat);
+  function desenharRepetir() {
+    if (!repetirEl) return;
+    const u = ultimoPedido();
+    repetirEl.hidden = !u.length || sacola.length > 0 || !!busca.value.trim();
+    if (repetirEl.hidden) return;
+    const nomes = u.map(l => l.qtd + "x " + cat.itens[l.id].nome);
+    $("repetirTxt").textContent = nomes.slice(0, 3).join(", ") + (nomes.length > 3 ? " e mais " + (nomes.length - 3) : "");
+  }
+  if (repetirEl) $("repetirBtn").onclick = () => {
+    const u = ultimoPedido(); if (!u.length) { desenharRepetir(); return; }
+    mudar(() => u); $("bagbtn").onclick();
+  };
+
   /* ---------------- atualizar tela ---------------- */
   function marcarSacola() {
     document.querySelectorAll("[data-incart]").forEach(el => {
@@ -535,7 +564,7 @@
     $("bagV").textContent = brl(tot);
     $("bagSub").textContent = (n === 1 ? "1 item" : n + " itens") + " · toque aqui para enviar";
     $("tot").textContent = brl(tot);
-    marcarSacola();
+    marcarSacola(); desenharRepetir();
     if (aberta() === "ovBag") {
       if (passoAtual === "Bag") desenharSacola();
       else if (passoAtual === "Nome") { if (!n) { passo("Bag"); desenharSacola(); } else atualizarMsg(); }

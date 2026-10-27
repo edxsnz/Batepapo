@@ -118,7 +118,7 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 .top{display:flex;align-items:center;gap:10px;min-width:0}
 .name{font-family:var(--cond);font-weight:800;font-size:23px;line-height:1.05;letter-spacing:.02em;text-transform:uppercase;min-width:0;transition:color .15s}
 .dots{flex:1;min-width:14px;height:0;border-bottom:3px dotted var(--dots);transform:translateY(5px)}
-.desc{color:var(--muted);font-size:14.5px;margin-top:5px;max-width:58ch}
+.desc{color:var(--muted);font-size:14.5px;line-height:1.55;margin-top:5px;max-width:58ch}
 .cat-label{font-family:var(--cond);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:2px}
 .incart{display:inline-block;margin-top:7px;font-family:var(--cond);font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--wa-deep)}
 
@@ -250,7 +250,8 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
   padding:12px 18px;border-radius:18px;font-weight:600;font-size:16px;line-height:1.35;box-shadow:0 8px 20px rgba(0,0,0,.25);text-align:center}
 
 @media (max-width:300px){.sec-head{gap:10px}.badge{width:42px;height:42px}.sec-title h2{font-size:20px}.sh-head h3{font-size:22px}}
-@media (max-height:520px){.sh-foot{flex-direction:row;flex-wrap:wrap;gap:8px;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px))}.sh-foot .big{flex:1 1 150px;min-height:44px;padding-block:8px}.sh-foot .total,.sh-foot .hint,.sh-foot .foot-row{flex:1 1 100%}.sh-head{padding-block:12px 8px}.sh-body{min-height:96px}}
+@media (max-height:520px){.sh-foot{flex-direction:row;flex-wrap:wrap;gap:8px;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px))}.sh-foot .big{flex:1 1 150px;min-height:44px;padding-block:8px}.sh-foot .hint,.sh-foot .foot-row{flex:1 1 100%}.sh-foot .total{flex:1 1 auto}.sh-head{padding-block:12px 8px}.sh-body{min-height:96px}}
+@media (max-height:420px){.sh-foot .hint{display:none}.sh-body{min-height:56px}}
 /* destaque promocional */
 .promo{position:relative;margin-top:36px;border-radius:22px;overflow:hidden;cursor:pointer;color:#fff;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--mustard);
   background:radial-gradient(rgba(0,0,0,.14) 1.4px,transparent 1.6px) 0 0/12px 12px,linear-gradient(135deg,var(--red) 0%,var(--red-deep) 100%)}
@@ -328,6 +329,47 @@ footer{background:var(--ink);color:var(--paper);padding-bottom:env(safe-area-ins
 footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
 .f-name{font-family:var(--display);font-size:clamp(26px,5vw,36px);line-height:1;color:var(--mustard)}
 .f-note{font-size:14px;opacity:.75}
+/* ---- v2: leitura limpa dos ingredientes ---- */
+.desc{line-height:1.5}.desc .i{white-space:nowrap}.promo-desc .i{white-space:nowrap}
+.desc .sep{font-style:normal;color:#b9a48c;padding:0 .1em}
+.desc .molhos{display:block;margin-top:2px;font-size:13.5px}
+.promo-desc .sep{font-style:normal;opacity:.6}.promo-desc .molhos{display:block;margin-top:3px;font-size:14px;opacity:.8}
+/* ---- v2: passo a passo mais enxuto ---- */
+.como-top{font-size:16.5px;margin-bottom:12px}
+.passos{gap:11px}
+.passos .num{width:34px;height:34px;font-size:18px}
+.passos b{font-size:20px}
+.passos span:not(.num){font-size:16px;margin-top:1px}
+.como-nota{margin-top:14px}
+
+/* ---- v2: repetir último pedido ---- */
+.repetir{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;padding:14px 16px;background:#fff;border:2px solid var(--line);border-radius:16px}
+.repetir[hidden]{display:none}
+.repetir-t{min-width:0;flex:1 1 200px;display:flex;flex-direction:column;gap:2px}
+.repetir-t b{font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.03em;text-transform:uppercase;color:var(--red)}
+.repetir-t span{font-size:15.5px;color:var(--muted);overflow-wrap:anywhere}
+.repetir-b{flex:none;height:44px;padding:0 18px;border-radius:999px;border:0;background:var(--red);color:#fff;font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.repetir-b:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+/* ---- v2: versão para imprimir (Ctrl+P): só o cardápio, em preto e branco ---- */
+@media print{
+  html,body{background:#fff!important}
+  .bar,.como,.repetir,.add,.bagbtn,.overlay,.toast,.checker,.hero-sub,.hero svg,.hero .art,.promo-btn,.incart,.promo-burst,.f-note{display:none!important}
+  .hero{background:#fff!important;color:#000!important;padding:0!important;border-bottom:3px solid #000}
+  .hero .wrap{padding-block:8px!important;display:block!important}
+  .hero *{color:#000!important;text-shadow:none!important;box-shadow:none!important}
+  .hero .stars{display:none}
+  .hero h1{font-size:30px!important;line-height:1.05!important;margin:0!important}.hero h1 span{display:inline!important}.hero h1 span+span{margin-left:.3em}
+  .hero .tagline{background:none!important;border:0!important;padding:0!important;font-size:16px!important;letter-spacing:.2em}
+  .hero .eyebrow,.hero .kicker{font-size:12px!important}
+  footer{background:#fff!important;color:#000!important}footer .wrap{padding-block:10px!important}
+  .promo{background:#fff!important;color:#000!important;border:2px solid #000;box-shadow:none!important;margin-top:10px}
+  .promo *{color:#000!important;text-shadow:none!important}
+  .list{grid-template-columns:1fr 1fr!important}
+  .item,.pcard,.chip{break-inside:avoid;box-shadow:none!important}
+  .item{grid-template-columns:1fr!important;padding:8px 0}
+  section{break-inside:auto}.sec-head{break-after:avoid}
+  .price,.price *{background:none!important;box-shadow:none!important;color:#000!important}
+}
 </style>
 </head>
 <body>
@@ -379,18 +421,22 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
 <noscript><style>#carregando{display:none}</style><div class="wrap nores"><strong>Ative o JavaScript</strong>Para ver o cardápio, ative o JavaScript do navegador.</div></noscript>
 <main class="wrap">
   <details class="como" id="como" open>
-    <summary><span class="como-ic" aria-hidden="true">?</span><span class="como-t">Como fazer seu pedido por aqui</span><span class="chev" aria-hidden="true"></span></summary>
+    <summary><span class="como-ic" aria-hidden="true">?</span><span class="como-t">Como pedir por aqui</span><span class="chev" aria-hidden="true"></span></summary>
     <div class="como-body">
-      <p class="como-top"><b>Você pode pedir seu lanche pelo celular, direto por este site.</b> Não precisa ligar nem instalar nada.</p>
+      <p class="como-top"><b>Você pode pedir seu lanche pelo celular, direto por este site.</b> Não precisa ligar nem instalar nada. A mensagem já vai pronta para o WhatsApp.</p>
       <ol class="passos">
-        <li><span class="num" aria-hidden="true">1</span><div><b>Escolha o lanche</b><span>Toque no botão vermelho <i class="mini">+ Pedir</i> ao lado dele.</span></div></li>
-        <li><span class="num" aria-hidden="true">2</span><div><b>Responda as perguntas</b><span>Quantos você quer e se quer algo a mais. O site te ajuda em cada passo.</span></div></li>
-        <li><span class="num" aria-hidden="true">3</span><div><b>Envie pelo WhatsApp</b><span>Toque em <b>“Ver meu pedido”</b> e depois em <b>“Pedir pelo WhatsApp”</b>. A mensagem já vai pronta, é só tocar em enviar.</span></div></li>
+        <li><span class="num" aria-hidden="true">1</span><div><b>Escolha</b><span>Toque em <i class="mini">+ Pedir</i> no lanche.</span></div></li>
+        <li><span class="num" aria-hidden="true">2</span><div><b>Responda</b><span>Quantos quer e se quer algo a mais.</span></div></li>
+        <li><span class="num" aria-hidden="true">3</span><div><b>Envie</b><span>Em <b>“Ver meu pedido”</b>, toque em <b>Pedir pelo WhatsApp</b>.</span></div></li>
       </ol>
       <p class="como-nota">A lanchonete responde pelo WhatsApp confirmando o valor.</p>
       <a class="como-zap" id="zapDireto" href="#" target="_blank" rel="noopener" hidden>Prefere conversar? Chame a lanchonete no WhatsApp</a>
     </div>
   </details>
+  <div class="repetir" id="repetir" hidden>
+    <div class="repetir-t"><b>Já pediu por aqui antes?</b><span id="repetirTxt"></span></div>
+    <button class="repetir-b" type="button" id="repetirBtn">Pedir de novo</button>
+  </div>
   <div id="menu"><div class="nores" id="carregando"><strong>Carregando o cardápio…</strong>Se demorar, atualize a página.</div></div>
   <div id="resultados" hidden></div>
 </main>

@@ -1,4 +1,4 @@
-# Cardápio Lanchonete Bate Papo
+# Cardápio Lanchonete Bate Papo — Versão 2
 
 ## Arquivos
 
@@ -52,3 +52,10 @@ python3 saboteur.py macaco               # roda só um cenário (macaco, storage
 ```
 
 O sabotador usa sementes fixas: se ele achar um defeito, o defeito aparece sempre igual até ser corrigido.
+
+## Novidades da Versão 2
+
+- **Pedir de novo:** depois que o cliente envia um pedido, o celular dele guarda esse pedido. Na próxima visita aparece "Já pediu por aqui antes?" com um botão que recoloca tudo no pedido. Os preços são sempre os atuais do `cardapio.js`, e lanche que saiu do cardápio é ignorado.
+- **Imprimir o cardápio:** abra o site no computador e use Ctrl+P. Sai só o cardápio, em preto e branco, sem botões (4 páginas A4).
+- **Ingredientes:** aparecem separados por pontos, e os molhos numa linha menor embaixo. Isso é só na tela, o texto no `cardapio.js` continua igual.
+- **Celular deitado:** o botão "Pedir pelo WhatsApp" não sai mais da tela.

@@ -71,10 +71,10 @@ INV_JS = """() => {
   if (lixo) erros.push('texto quebrado na tela: "' + lixo[0] + '"');
   const intruso = document.querySelectorAll('#menu img,#resultados img,#ovItem img,#ovBag img,iframe,object,embed,[onerror],[onload],[onclick],#menu script,#ovItem script,#ovBag script,#resultados script,#menu style');
   if (intruso.length) erros.push('elemento intruso na página: ' + intruso[0].outerHTML.slice(0, 80));
-  const animando = document.getAnimations().some(a => a.playState === 'running');
+  const animando = document.getAnimations().some(a => a.playState === 'running' || a.playState === 'pending');
   for (const id of ['ovItem', 'ovBag']) if (vis(id) && !animando) {
     const bt = [...document.getElementById(id).querySelectorAll('.sh-foot button, .sh-foot a, #itFoot button')].filter(b => b.offsetParent);
-    for (const b of bt) { const r = b.getBoundingClientRect(); if (r.bottom > innerHeight + 1 || r.top < -1) { erros.push('botão "' + b.textContent.trim().slice(0, 20) + '" fora da tela em ' + id); break; } }
+    for (const b of bt) { const r = b.getBoundingClientRect(); if (r.bottom > innerHeight + 1 || r.top < -1) { erros.push('botão "' + b.textContent.trim().slice(0, 20) + '" fora da tela em ' + id + ' (top=' + Math.round(r.top) + ' bottom=' + Math.round(r.bottom) + ' innerH=' + innerHeight + ' tr=' + getComputedStyle(b.closest('.sheet')).transform + ' sheetTop=' + Math.round(b.closest('.sheet').getBoundingClientRect().top) + ' anims=' + document.getAnimations().map(a => a.playState + ':' + (a.effect && a.effect.target ? a.effect.target.className : '')).join('|') + ' sheetH=' + Math.round(b.closest('.sheet').getBoundingClientRect().height) + ')'); break; } }
   }
   return erros;
 }"""
