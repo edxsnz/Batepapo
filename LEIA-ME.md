@@ -59,3 +59,10 @@ O sabotador usa sementes fixas: se ele achar um defeito, o defeito aparece sempr
 - **Imprimir o cardápio:** abra o site no computador e use Ctrl+P. Sai só o cardápio, em preto e branco, sem botões (4 páginas A4).
 - **Ingredientes:** aparecem separados por pontos, e os molhos numa linha menor embaixo. Isso é só na tela, o texto no `cardapio.js` continua igual.
 - **Celular deitado:** o botão "Pedir pelo WhatsApp" não sai mais da tela.
+
+## Botões (revisão do time, Versão 2)
+
+- Todos os botões seguem um padrão único (tokens `--btn-h`, `--r-btn`, `--sh-btn`... no começo do CSS): pelo menos 44px para o dedo (48px nos principais), mesma sombra e mesmo "afundar" ao tocar, foco visível no teclado.
+- "Adicionar ao pedido", "Ver meu pedido" e os botões das janelas se reorganizam sozinhos em tela pequena ou com fonte grande: nada sai da tela e o preço nunca é cortado.
+- O aviso "Pronto!" fica acima do botão "Ver meu pedido"; tocar nele só fecha o aviso.
+- Teste de layout: `cd tests && python3 layout.py` (com o site em http://127.0.0.1:8765/). Ele confere 16 tamanhos de tela (celular pequeno, comum, grande, deitado, fonte grande, tablet e PC) em 18 situações do pedido e reprova botão fora da tela, cortado, pequeno demais, aviso cobrindo o botão ou palavra de título partida.

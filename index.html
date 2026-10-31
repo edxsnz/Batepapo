@@ -31,11 +31,17 @@
   --display:"Bowlby One","Arial Black",Impact,sans-serif;
   --cond:"Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  /* padrão de botões (ver padrao-botoes.md): alturas, raios, sombra "de apertar" */
+  --btn-h:48px; --btn-h-sm:44px;
+  --r-pill:999px; --r-btn:14px; --r-ctl:12px;
+  --sh-btn:0 3px 0 var(--ink); --sh-btn-on:0 1px 0 var(--ink);
+  --fs-btn:clamp(17px,4.6vw,21px);
   --gl:max(16px,env(safe-area-inset-left,0px)); --gr:max(16px,env(safe-area-inset-right,0px));
   color-scheme:light;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;background:var(--ink)}
+/* o foco pelo Tab nunca fica escondido atrás do botão "Ver meu pedido" (--bag-h vem do app.js) */
+html{scroll-behavior:smooth;background:var(--ink);scroll-padding-bottom:calc(var(--bag-h,0px) + 32px)}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%;overflow-x:hidden}
 body.lock{overflow:hidden}
@@ -80,44 +86,68 @@ h1 span{display:block}
 /* ---------- barra fixa: busca + categorias ---------- */
 .bar{position:sticky;top:0;z-index:5;background:rgba(255,248,238,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   border-bottom:2px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
-.search{position:relative;padding-top:12px}
-.search svg{position:absolute;left:calc(var(--gl) + 14px);top:calc(12px + 50%);transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none}
-.search input{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px 44px 12px 44px;
+.search{position:relative;padding-top:10px}
+.search svg{position:absolute;left:calc(var(--gl) + 14px);top:calc(5px + 50%);transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none}
+.search input{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 52px 10px 44px;
   -webkit-appearance:none;appearance:none;transition:border-color .15s, box-shadow .15s}
 .search input::placeholder{color:#a8907f}
 .search input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 4px rgba(200,40,30,.12)}
 .search input::-webkit-search-cancel-button{display:none}
-.clear{position:absolute;right:calc(var(--gr) + 8px);top:calc(12px + 50%);transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:0;
+.clear{position:absolute;right:calc(var(--gr) + 4px);top:calc(5px + 50%);transform:translateY(-50%);width:var(--btn-h-sm);height:var(--btn-h-sm);border-radius:50%;border:0;
   background:var(--line);display:grid;place-items:center;font-size:18px;line-height:1}
-.cats{display:flex;gap:8px;overflow-x:auto;padding-block:10px 11px;scrollbar-width:none}
+/* barra fixa enxuta (≤ 120px): busca 47px + chips 44px */
+.cats{display:flex;gap:8px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
 .cats::-webkit-scrollbar{display:none}
 .cats a{flex:none;display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--ink);
   font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.04em;text-transform:uppercase;
-  padding:7px 14px 6px 10px;border-radius:999px;border:2px solid var(--line);background:var(--card);transition:background .15s,border-color .15s,color .15s}
+  min-height:var(--btn-h-sm);padding:7px 14px 6px 10px;border-radius:var(--r-pill);border:2px solid var(--line);background:var(--card);transition:background .15s,border-color .15s,color .15s}
 .cats a svg{width:18px;height:18px;color:var(--red)}
-.cats a:hover{border-color:var(--red)}
+@media (hover:hover){.cats a:hover{border-color:var(--red)}}
+/* PC: todas as categorias à vista, em até 2 linhas (sem item cortado na borda) */
+/* uma linha só, rolável; o degradê na borda mostra que tem mais categorias para o lado (classes .mais-esq/.mais-dir vêm do app.js) */
+.cats.mais-dir{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent)}
+.cats.mais-esq{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px);mask-image:linear-gradient(90deg,transparent,#000 56px)}
+.cats.mais-esq.mais-dir{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 56px),transparent)}
+/* PC: chips um pouco mais justos para caber tudo numa linha quando der */
+@media (min-width:900px){.cats{gap:6px}.cats a{padding-inline:8px 11px;letter-spacing:.03em}}
 .cats a.on{background:var(--red);border-color:var(--red);color:#fff}
 .cats a.on svg{color:var(--mustard)}
-:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+/* foco do teclado: anel escuro (contraste bom sobre papel e branco); sobre fundo vermelho/escuro, anel claro */
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.promo :focus-visible,.hero :focus-visible{outline-color:#fff}
+.bagbtn:focus-visible{outline:4px solid var(--mustard);outline-offset:-4px}
 
 /* ---------- seções ---------- */
 main{padding-bottom:120px}
 section{padding-top:48px;scroll-margin-top:130px}
-.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:10px;container-type:inline-size}
 .badge{flex:none;width:52px;height:52px;border-radius:50%;background:var(--mustard);color:var(--ink);display:grid;place-items:center;box-shadow:3px 3px 0 var(--ink)}
 .badge svg{width:28px;height:28px}
-.sec-title{min-width:0;overflow-wrap:anywhere}
-h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);line-height:1;margin:0;color:var(--red);text-wrap:balance}
+.sec-title{min-width:0;flex:0 1 auto;overflow-wrap:break-word;hyphens:none}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);hyphens:none;line-height:1;margin:0;color:var(--red);text-wrap:balance}
 .sec-sub{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
 .rule{flex:1;height:4px;align-self:center;margin-left:6px;background:repeating-linear-gradient(90deg,var(--mustard) 0 14px,transparent 14px 22px);border-radius:2px;min-width:20px}
+/* a palavra mais longa ("Complementos") tem ~9,1 vezes o tamanho da fonte: a fonte diminui com o espaço para nunca partir a palavra */
+.sec-title h2{font-size:clamp(17px,calc((100cqi - 96px) / 9.6),38px)}
+@container (max-width:300px){.sec-head{gap:10px}.sec-head .badge{width:40px;height:40px}.sec-head .badge svg{width:22px;height:22px}.sec-head .rule{display:none}.sec-title h2{font-size:clamp(15px,calc((100cqi - 52px) / 9.4),24px)}}
 
 .list{display:grid;grid-template-columns:1fr;column-gap:56px}
 @media (min-width:780px){.list{grid-template-columns:1fr 1fr}}
-.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 12px;align-items:start;padding:16px 0 15px;border-bottom:1.5px dashed var(--line);cursor:pointer}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 12px;align-items:start;padding:16px 0 15px;border-bottom:1.5px dashed var(--line);cursor:pointer;container:item / inline-size}
+/* item estreito (celular pequeno ou fonte grande): nome na linha toda, preço e "+ Pedir" lado a lado embaixo */
+@container item (max-width:300px){
+  .item>div,.item .top{display:contents}
+  .item .cat-label,.item .name,.item .selo,.item .desc,.item .incart{grid-column:1 / -1}
+  .item .cat-label{order:0}.item .name{order:1;margin-bottom:8px}.item .dots{display:none}
+  .item .price{order:2;justify-self:start;align-self:center}.item .add{order:3}
+  .item .selo,.item .desc,.item .incart{order:4;justify-self:start}
+}
 .item:hover .name{color:var(--red)}
-.top{display:flex;align-items:center;gap:10px;min-width:0}
-.name{font-family:var(--cond);font-weight:800;font-size:23px;line-height:1.05;letter-spacing:.02em;text-transform:uppercase;min-width:0;transition:color .15s}
-.dots{flex:1;min-width:14px;height:0;border-bottom:3px dotted var(--dots);transform:translateY(5px)}
+/* nome e preço lado a lado; se o nome não couber inteiro, o preço desce (com os pontinhos) e o nome ganha a linha toda */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0}
+.top .name{flex:0 1 auto}
+.name{font-family:var(--cond);font-weight:800;font-size:23px;line-height:1.05;letter-spacing:.02em;text-transform:uppercase;min-width:0;hyphens:none;transition:color .15s}
+.dots{flex:1 1 14px;min-width:14px;height:0;border-bottom:3px dotted var(--dots);transform:translateY(5px)}
 .desc{color:var(--muted);font-size:14.5px;line-height:1.55;margin-top:5px;max-width:58ch}
 .cat-label{font-family:var(--cond);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:2px}
 .incart{display:inline-block;margin-top:7px;font-family:var(--cond);font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--wa-deep)}
@@ -127,10 +157,10 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 .price .cur{font-size:12px;margin:3px 3px 0 0}
 .price .int{font-size:27px;letter-spacing:-.01em}
 .price .cts{font-size:13px;margin:3px 0 0 1px}
-.add{height:42px;padding:0 15px 0 11px;border-radius:999px;border:0;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:5px;box-shadow:2px 2px 0 var(--ink);transition:transform .12s;
-  font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;align-self:start}
+.add{min-height:var(--btn-h-sm);padding:0 15px 0 11px;border-radius:var(--r-pill);border:0;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:5px;box-shadow:var(--sh-btn);
+  font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.05em;text-transform:uppercase;text-align:center;align-self:start}
 .add svg{width:18px;height:18px;flex:none}
-.add:active{transform:scale(.92)}
+
 
 .hero-sub{margin:16px 0 0;max-width:24ch;font-size:clamp(17px,2.6vw,21px);line-height:1.35;color:#fff}
 .hero-sub b{color:var(--mustard)}
@@ -183,61 +213,94 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 /* ---------- botão da sacola ---------- */
 .bagbtn{position:fixed;z-index:8;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));
   width:min(560px, calc(100% - 32px));display:flex;align-items:center;gap:12px;border:0;border-radius:18px;background:var(--ink);color:#fff;
-  padding:12px 14px 12px 12px;box-shadow:0 10px 30px rgba(43,23,16,.35);text-align:left}
-.bagbtn .ic{position:relative;width:44px;height:44px;border-radius:12px;background:var(--red);display:grid;place-items:center;flex:none}
+  min-height:64px;padding:10px 14px 10px 12px;box-shadow:0 10px 30px rgba(43,23,16,.35);text-align:left;container:bag / inline-size}
+.bagbtn .ic{width:44px;height:44px;border-radius:12px;background:var(--red);display:grid;place-items:center;flex:none}
 .bagbtn .ic svg{width:24px;height:24px}
-.bagbtn .n{position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:var(--mustard);color:var(--ink);
+/* o número fica preso ao botão (não ao ícone) para não "vazar" da caixa do ícone */
+.bagbtn .n{position:absolute;top:calc(50% - 29px);left:41px;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:var(--mustard);color:var(--ink);
   font-family:var(--cond);font-weight:800;font-size:14px;display:grid;place-items:center;border:2px solid var(--ink)}
-.bagbtn .t{flex:1;font-family:var(--cond);font-weight:800;font-size:20px;letter-spacing:.04em;text-transform:uppercase;line-height:1.1}
-.bagbtn .t small{display:block;font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:0;text-transform:none;opacity:.7}
-.bagbtn .v{font-family:var(--cond);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
+/* "Ver meu pedido" sempre em 1 linha; o valor fica ao lado quando cabe e desce para baixo do título quando não cabe.
+   O subtítulo mostra só "N itens"; o "toque aqui para enviar" aparece quando o botão é largo. */
+.bagbtn .tv{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;column-gap:12px;line-height:1.1}
+.bagbtn .t{font-family:var(--cond);font-weight:800;font-size:20px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.bagbtn .sub{flex-basis:100%;order:3;font-family:var(--body);font-weight:500;font-size:14px;letter-spacing:0;text-transform:none;opacity:.8;white-space:nowrap}
+.bagbtn .tq{display:none}
+.bagbtn .v{font-family:var(--cond);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums;white-space:nowrap}
+@container bag (min-width:420px){.bagbtn .tq{display:inline}}
+@container bag (max-width:330px){.bagbtn .sub{display:none}.bagbtn .t{font-size:clamp(16px,8.6cqi,20px)}.bagbtn .v{font-size:20px}}
 @media (prefers-reduced-motion:no-preference){.bagbtn.bump .ic{animation:bump .35s}@keyframes bump{40%{transform:scale(1.18) rotate(-6deg)}}}
 
 /* ---------- janelas ---------- */
 .overlay{position:fixed;inset:0;z-index:20;background:rgba(30,14,8,.55);display:flex;align-items:flex-end;justify-content:center}
 @media (min-width:700px){.overlay{align-items:center;padding:24px}}
-.sheet{background:var(--paper);width:100%;max-width:560px;max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;border-radius:22px 22px 0 0;overflow:hidden}
+.sheet{background:var(--paper);width:100%;max-width:560px;max-height:92%;display:flex;flex-direction:column;border-radius:22px 22px 0 0;overflow:hidden}
 @media (min-width:700px){.sheet{border-radius:22px;box-shadow:8px 8px 0 var(--ink)}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .25s cubic-bezier(.2,.9,.3,1)}@keyframes up{from{transform:translateY(40px)}}}
-.sh-head{display:flex;align-items:flex-start;gap:12px;padding:20px 20px 12px;border-bottom:2px dashed var(--line)}
+.sh-head{flex:none;display:flex;align-items:flex-start;gap:12px;padding:20px 20px 12px;border-bottom:2px dashed var(--line)}
 .sh-head h3{flex:1;min-width:0;overflow-wrap:anywhere;margin:0;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.05;color:var(--red)}
 .sh-head p{margin:6px 0 0;color:var(--muted);font-size:14.5px}
-.x{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:var(--line);font-size:22px;line-height:1;display:grid;place-items:center}
+.x{flex:none;width:var(--btn-h-sm);height:var(--btn-h-sm);margin:-4px -4px 0 0;border-radius:50%;border:0;background:var(--line);font-size:22px;line-height:1;display:grid;place-items:center}
 .sh-body{padding:16px 20px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:18px}
-.sh-foot{padding:14px 20px calc(16px + env(safe-area-inset-bottom,0px));border-top:2px solid var(--line);background:var(--card);display:flex;flex-direction:column;gap:10px}
+.sh-foot{flex:none;padding:14px 20px calc(16px + env(safe-area-inset-bottom,0px));border-top:2px solid var(--line);background:var(--card);display:flex;flex-direction:column;gap:10px}
 .label{font-family:var(--cond);font-weight:800;font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-bottom:8px}
 .label small{font-family:var(--body);font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);font-size:13px;margin-left:6px}
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.opt{display:flex;align-items:center;justify-content:space-between;gap:6px;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;text-align:left}
-.opt span{font-weight:600}
-.opt em{font-style:normal;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* adicional: nome e preço lado a lado; se não couber, o preço desce para baixo do nome (nunca vaza da caixa) */
+.opt{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 6px;min-width:0;min-height:var(--btn-h);border:2px solid var(--line);background:var(--card);border-radius:var(--r-ctl);padding:10px 12px;text-align:left}
+.opt span{font-weight:600;min-width:0;overflow-wrap:break-word}
+.opt em{font-style:normal;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:auto}
+@media (hover:hover){.opt:hover{border-color:var(--muted)}}
 .opt[aria-pressed="true"]{border-color:var(--red);background:#fff1ef}
 .opt[aria-pressed="true"] span::before{content:"✓ ";color:var(--red);font-weight:800}
 .field{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:12px 14px}
 .field:focus{outline:none;border-color:var(--red)}
 .stepper{display:inline-flex;align-items:center;border:2px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
-.stepper button{width:44px;height:44px;border:0;background:none;font-size:22px;font-weight:700;color:var(--red)}
+.stepper button{width:var(--btn-h-sm);height:var(--btn-h-sm);border:0;background:none;font-size:22px;font-weight:700;color:var(--red)}
 .stepper button:disabled{color:var(--dots);cursor:default}
 .stepper output{min-width:34px;text-align:center;font-family:var(--cond);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
-.stepper.sm button{width:36px;height:36px;font-size:19px}
-.stepper.sm output{min-width:26px;font-size:19px}
-.big{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;border-radius:14px;padding:15px 18px;
-  background:var(--red);color:#fff;font-family:var(--cond);font-weight:800;font-size:21px;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;box-shadow:3px 3px 0 var(--ink)}
-.big svg{width:24px;height:24px}
+.stepper.sm button{width:var(--btn-h-sm);height:var(--btn-h-sm);font-size:21px}
+.stepper.sm output{min-width:34px;font-size:19px;align-self:stretch;display:grid;place-items:center;border-inline:2px solid var(--line)}
+.big{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-width:0;min-height:var(--btn-h);border:0;border-radius:var(--r-btn);padding:12px 18px;
+  background:var(--red);color:#fff;font-family:var(--cond);font-weight:800;font-size:var(--fs-btn);letter-spacing:.05em;line-height:1.1;text-transform:uppercase;text-decoration:none;text-align:center;box-shadow:var(--sh-btn)}
+.big svg{width:24px;height:24px;flex:none}
 .big.wa{background:var(--wa)}
-.big.ghost{background:none;color:var(--ink);box-shadow:none;border:2px solid var(--line);font-size:18px;padding:11px}
-.foot-row{display:flex;align-items:center;gap:12px}
-.foot-row .big{flex:1}
-.add-btn{justify-content:space-between;white-space:nowrap;padding-inline:16px}
+.big.ghost{background:none;color:var(--ink);box-shadow:none;border:2px solid var(--line);font-size:18px;padding:10px 12px}
+
+/* estados de todos os botões (padrão único) */
+.big,.add,.repetir-b,.dica-btn,.chipq,.opt,.escolha2 button,.stepper button,.x,.clear,.cats a{transition:transform .12s,box-shadow .12s,background-color .15s,border-color .15s}
+.big:not(.ghost):active,.add:active,.repetir-b:active,.dica-btn:active{transform:translateY(2px);box-shadow:var(--sh-btn-on)}
+.big.ghost:active,.opt:active,.chipq:active{background-color:#fff1ef}
+@media (hover:hover){
+  .big:not(.ghost):not(.wa):hover,.add:hover,.repetir-b:hover{background-color:var(--red-deep)}
+  .big.wa:hover{background-color:var(--wa-deep)}
+  .big.ghost:hover,.chipq:hover,.x:hover,.clear:hover{border-color:var(--ink)}
+  .promo-btn.add:hover{background-color:#fff1ef}
+}
+.big:disabled,.add:disabled,.repetir-b:disabled{opacity:.45;box-shadow:none;cursor:default;transform:none}
+@media (prefers-reduced-motion:reduce){.big:active,.add:active,.repetir-b:active,.dica-btn:active,.escolha2 button:active{transform:none}}
+/* Rodapé das janelas: os botões nunca passam da tela.
+   Cada botão começa do tamanho do próprio texto; se "Voltar/Corrigir" + o botão principal
+   não cabem lado a lado, o principal desce para uma linha própria (fica embaixo, perto do polegar)
+   e os dois ocupam a largura toda. Nada de larguras fixas por aparelho. */
+.foot-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px 12px}
+.foot-row .big{flex:1 1 auto;width:auto}
+.foot-row .big:not(.ghost){flex-grow:3}
+.sh-foot .big{min-height:48px}
+/* Botão "Adicionar ao pedido": texto e preço ficam lado a lado quando cabem;
+   se não couber, o preço vai para uma segunda linha (centralizada) e, em último caso,
+   o texto quebra entre palavras — nunca é cortado. */
+.add-btn{flex-wrap:wrap;justify-content:center;gap:4px .6em;padding-inline:16px;text-align:center;line-height:1.1}
+.add-btn>span{min-width:0}
+.add-btn .nw{font-size:.88em;background:rgba(0,0,0,.18);border-radius:8px;padding:3px 8px 2px}
 .nw{white-space:nowrap;font-variant-numeric:tabular-nums}
 
 .line{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding-bottom:14px;border-bottom:1.5px dashed var(--line)}
 .line .nm{font-family:var(--cond);font-weight:800;font-size:21px;text-transform:uppercase;line-height:1.1;min-width:0}
-.line .ex{color:var(--muted);font-size:14px;grid-column:1}
+.line .ex{color:var(--muted);font-size:14px;grid-column:1 / -1}
 .line .ex b{color:var(--ink);font-weight:600}
 .line .lp{font-family:var(--cond);font-weight:800;font-size:20px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .line .ctl{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between}
-.rm{border:0;background:none;color:var(--muted);text-decoration:underline;font-size:14px;padding:6px 0}
+.rm{display:inline-flex;align-items:center;min-height:var(--btn-h-sm);border:0;background:none;color:var(--muted);text-decoration:underline;font-size:15px;padding:0 4px}
 .total{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--cond);font-weight:800;text-transform:uppercase}
 .total span{font-size:18px;letter-spacing:.08em;color:var(--muted)}
 .total strong{font-size:30px;font-variant-numeric:tabular-nums}
@@ -246,26 +309,51 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 .err{color:var(--red);font-weight:700;font-size:14px;margin:6px 0 0}
 .empty-bag{text-align:center;color:var(--muted);padding:30px 0}
 
-.toast{position:fixed;z-index:30;left:16px;right:16px;margin-inline:auto;width:fit-content;max-width:min(calc(100% - 32px),440px);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;
-  padding:12px 18px;border-radius:18px;font-weight:600;font-size:16px;line-height:1.35;box-shadow:0 8px 20px rgba(0,0,0,.25);text-align:center}
+/* aviso: sempre acima do "Ver meu pedido" (altura real em --bag-h), visual claro para não virar um bloco só com ele;
+   tocar nele só fecha o aviso (não abre o lanche que está embaixo) */
+.toast{position:fixed;z-index:30;left:16px;right:16px;margin-inline:auto;width:fit-content;max-width:min(calc(100% - 32px),440px);
+  bottom:calc(var(--bag-h,0px) + 28px + env(safe-area-inset-bottom,0px));background:var(--card);color:var(--ink);border:2px solid var(--ink);
+  padding:9px 14px;border-radius:16px;font-weight:600;font-size:16px;line-height:1.35;box-shadow:0 3px 0 var(--ink),0 8px 20px rgba(0,0,0,.18);text-align:center;cursor:pointer}
+.toast b{display:block;font-family:var(--cond);font-weight:800;font-size:18px;letter-spacing:.03em;text-transform:uppercase;line-height:1.15}
+.toast b::first-letter{color:var(--wa-deep)}
+.toast small{display:block;font-size:14px;font-weight:500;color:var(--muted);margin-top:2px}
 
-@media (max-width:300px){.sec-head{gap:10px}.badge{width:42px;height:42px}.sec-title h2{font-size:20px}.sh-head h3{font-size:22px}}
-@media (max-height:520px){.sh-foot{flex-direction:row;flex-wrap:wrap;gap:8px;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px))}.sh-foot .big{flex:1 1 150px;min-height:44px;padding-block:8px}.sh-foot .hint,.sh-foot .foot-row{flex:1 1 100%}.sh-foot .total{flex:1 1 auto}.sh-head{padding-block:12px 8px}.sh-body{min-height:96px}}
+@media (max-width:300px){.sh-head h3{font-size:22px}}
+/* tela baixa, estreita ou fonte grande: rodapés das janelas mais enxutos para sobrar lugar para a lista */
+@media (max-height:700px),(max-width:360px){
+  /* balões de explicação "intro" somem: os lanches (sacola) e o resumo (Conferir) aparecem sem rolar */
+  #footBag .hint,.sh-body .intro{display:none}
+  .foot-row{gap:8px}
+  .foot-row .big.ghost{min-height:var(--btn-h-sm);padding-block:6px}
+  .prog li{font-size:12px}
+  #bagFala:not(:has(.bolha:not(.intro))){display:none}
+  #bagHint{display:none}
+  .sh-head{padding-block:14px 10px}
+  .sh-foot .big{padding-inline:12px;gap:8px;letter-spacing:.03em}
+  .total strong{font-size:26px}
+  .sh-foot{padding-top:10px;gap:8px}
+  #footNome,#footOk{flex-direction:row;flex-wrap:wrap}
+  #footNome>.big:first-child,#footOk>.big:first-child{flex:1 1 100%}
+  #footNome .ghost,#footOk .ghost{flex:1 1 0;min-height:var(--btn-h-sm);font-size:17px;padding:6px 8px}
+}
+@media (max-height:520px){.sh-foot{flex-direction:row;flex-wrap:wrap;gap:8px;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px))}.sh-foot .big{flex:1 1 150px;min-height:var(--btn-h);padding-block:8px}.sh-foot .foot-row .big{flex-basis:auto}#footNome>.big:first-child,#footOk>.big:first-child{flex:1 1 100%}#footNome .ghost,#footOk .ghost{flex:1 1 0;min-height:var(--btn-h-sm)}.sh-foot .hint,.sh-foot .foot-row{flex:1 1 100%}.sh-foot .total{flex:0 1 auto;gap:14px}.sh-head{padding-block:12px 8px}.sh-body{min-height:96px}}
 @media (max-height:420px){.sh-foot .hint{display:none}.sh-body{min-height:56px}}
 /* destaque promocional */
-.promo{position:relative;margin-top:36px;border-radius:22px;overflow:hidden;cursor:pointer;color:#fff;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--mustard);
+.promo{position:relative;margin-top:36px;container:promo / inline-size;border-radius:22px;overflow:hidden;cursor:pointer;color:#fff;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--mustard);
   background:radial-gradient(rgba(0,0,0,.14) 1.4px,transparent 1.6px) 0 0/12px 12px,linear-gradient(135deg,var(--red) 0%,var(--red-deep) 100%)}
 .promo-body{position:relative;padding:24px 22px 22px;display:flex;flex-direction:column;gap:8px;max-width:620px}
 .promo-kicker{align-self:flex-start;background:var(--mustard);color:var(--ink);font-family:var(--cond);font-weight:800;font-size:15px;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px 3px;border-radius:6px}
-.promo-name{color:#fff;margin:2px 0 0;font-family:var(--display);font-weight:400;font-size:clamp(30px,6vw,46px);line-height:1;text-shadow:3px 3px 0 var(--ink);padding-right:96px}
+.promo-name{color:#fff;margin:2px 0 0;font-family:var(--display);font-weight:400;font-size:clamp(26px,6vw,46px);hyphens:none;overflow-wrap:break-word;line-height:1;text-shadow:3px 3px 0 var(--ink);padding-right:96px}
 .promo-desc{margin:0;opacity:.92;font-size:15px;max-width:52ch}
 .promo-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px}
-.promo-btn{width:auto;height:auto;border-radius:12px;padding:10px 18px;background:#fff;color:var(--red);font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.06em;text-transform:uppercase}
+.promo-btn{width:auto;height:auto;min-height:var(--btn-h);border-radius:var(--r-btn);padding:10px 18px;background:#fff;color:var(--red);font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.05em;text-transform:uppercase;box-shadow:var(--sh-btn)}
 .promo .incart{color:var(--mustard)}
 .promo-burst{position:absolute;top:14px;right:14px;width:104px;height:104px;display:grid;place-items:center;text-align:center;color:var(--ink);
   font-family:var(--display);font-weight:400;font-size:21px;line-height:.95;padding:12px;
   background:var(--mustard);clip-path:polygon(50% 0,61% 13%,77% 6%,80% 23%,96% 26%,89% 41%,100% 54%,86% 63%,90% 80%,73% 80%,65% 96%,52% 86%,38% 98%,30% 82%,12% 84%,15% 67%,0 56%,11% 43%,4% 27%,21% 22%,24% 5%,39% 13%);transform:rotate(10deg)}
 .promo-burst small{display:block;font-family:var(--cond);font-weight:800;font-size:15px;letter-spacing:.12em;text-transform:uppercase}
+/* destaque estreito: selo menor e o nome começa abaixo dele, ocupando a largura toda */
+@container promo (max-width:340px){.promo-burst{width:84px;height:84px;font-size:17px;padding:10px}.promo-burst small{font-size:13px}.promo-kicker{margin-right:78px}.promo-name{padding-right:0;margin-top:22px;font-size:clamp(22px,11cqi,30px)}}
 @media (min-width:780px){.promo-burst{top:50%;right:56px;width:190px;height:190px;font-size:40px;margin-top:-95px}.promo-burst small{font-size:22px}.promo-name{padding-right:0}}
 @media (prefers-reduced-motion:no-preference){.promo-burst span{display:block;animation:pulsa 2.4s ease-in-out infinite}@keyframes pulsa{50%{transform:scale(1.08)}}}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -280,7 +368,7 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 .fala{position:relative;min-width:0;background:var(--card);border:2px solid var(--line);border-radius:4px 16px 16px 16px;padding:10px 14px;font-size:15.5px;line-height:1.4}
 .bolha.dica .fala{background:#fff7dc;border-color:#f3d47c}
 .bolha.aviso .fala{background:#fff1ef;border-color:#f1b7b0}
-.dica-btn{display:block;margin-top:10px;border:0;border-radius:10px;background:var(--ink);color:#fff;font-family:var(--cond);font-weight:800;font-size:17px;letter-spacing:.05em;text-transform:uppercase;padding:9px 14px}
+.dica-btn{display:block;min-height:var(--btn-h-sm);margin-top:10px;border:0;border-radius:var(--r-ctl);background:var(--ink);color:#fff;font-family:var(--cond);font-weight:800;font-size:17px;letter-spacing:.05em;text-transform:uppercase;padding:9px 14px}
 @media (prefers-reduced-motion:no-preference){.sh-body .bolha{animation:entra .28s ease-out both}.sh-body .bolha+.bolha{animation-delay:.08s}@keyframes entra{from{transform:translateY(6px);opacity:.2}}}
 .boas{position:relative;margin-top:28px;padding:14px 50px 14px 14px;border:2px dashed var(--mustard);border-radius:18px;background:#fffdf7}
 .boas .x{position:absolute;top:10px;right:10px;width:32px;height:32px;font-size:19px}
@@ -303,12 +391,13 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);l
 .escolha2 b{font-family:var(--cond);font-weight:800;font-size:21px;text-transform:uppercase;letter-spacing:.03em}
 .escolha2 small{color:var(--muted);font-size:14px}
 .escolha2 button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--mustard)}
-.trocar{align-self:flex-start;border:0;background:none;color:var(--red);font-weight:700;text-decoration:underline;padding:4px 0;font-size:15px}
+.trocar{align-self:flex-start;display:inline-flex;align-items:center;min-height:var(--btn-h-sm);border:0;background:none;color:var(--red);font-weight:700;text-decoration:underline;padding:0 2px;font-size:15px;text-align:left}
 
 .painel{display:flex;flex-direction:column;gap:8px}
 .painel .label{margin:6px 0 0}
-.painel .opts{grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
-.painel.compacto .opt{padding:8px 10px}
+/* 2 colunas sempre que cada uma tem pelo menos 130px (o preço desce para baixo do nome se não couber); senão 1 coluna */
+.painel .opts{grid-template-columns:repeat(auto-fill,minmax(min(100%,130px),1fr))}
+.painel.compacto .opt{padding:8px 10px;min-height:var(--btn-h-sm)}
 .painel.compacto .opt span{font-size:15px}
 .nota{margin:0;font-size:14.5px;color:var(--muted)}
 .nota b{color:var(--red)}
@@ -332,7 +421,8 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
 /* ---- v2: leitura limpa dos ingredientes ---- */
 .desc{line-height:1.5}.desc .i{white-space:nowrap}.promo-desc .i{white-space:nowrap}
 .desc .sep{font-style:normal;color:#b9a48c;padding:0 .1em}
-.desc .molhos{display:block;margin-top:2px;font-size:13.5px}
+.desc .molhos,.it-desc .molhos{display:block;margin-top:2px;font-size:13.5px}
+.it-desc{margin:0;color:var(--muted);font-size:14.5px;line-height:1.5}.it-desc .i{white-space:nowrap}.it-desc .sep{font-style:normal;color:#b9a48c;padding:0 .1em}
 .promo-desc .sep{font-style:normal;opacity:.6}.promo-desc .molhos{display:block;margin-top:3px;font-size:14px;opacity:.8}
 /* ---- v2: passo a passo mais enxuto ---- */
 .como-top{font-size:16.5px;margin-bottom:12px}
@@ -348,8 +438,7 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
 .repetir-t{min-width:0;flex:1 1 200px;display:flex;flex-direction:column;gap:2px}
 .repetir-t b{font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.03em;text-transform:uppercase;color:var(--red)}
 .repetir-t span{font-size:15.5px;color:var(--muted);overflow-wrap:anywhere}
-.repetir-b{flex:none;height:44px;padding:0 18px;border-radius:999px;border:0;background:var(--red);color:#fff;font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 3px 0 var(--ink);cursor:pointer}
-.repetir-b:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.repetir-b{flex:none;min-height:var(--btn-h-sm);padding:0 18px;border-radius:var(--r-pill);border:0;background:var(--red);color:#fff;font-family:var(--cond);font-weight:800;font-size:19px;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 3px 0 var(--ink);cursor:pointer}
 /* ---- v2: versão para imprimir (Ctrl+P): só o cardápio, em preto e branco ---- */
 @media print{
   html,body{background:#fff!important}
@@ -420,6 +509,10 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
 
 <noscript><style>#carregando{display:none}</style><div class="wrap nores"><strong>Ative o JavaScript</strong>Para ver o cardápio, ative o JavaScript do navegador.</div></noscript>
 <main class="wrap">
+  <div class="repetir" id="repetir" hidden>
+    <div class="repetir-t"><b>Já pediu por aqui antes?</b><span id="repetirTxt"></span></div>
+    <button class="repetir-b" type="button" id="repetirBtn">Pedir de novo</button>
+  </div>
   <details class="como" id="como" open>
     <summary><span class="como-ic" aria-hidden="true">?</span><span class="como-t">Como pedir por aqui</span><span class="chev" aria-hidden="true"></span></summary>
     <div class="como-body">
@@ -433,10 +526,6 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
       <a class="como-zap" id="zapDireto" href="#" target="_blank" rel="noopener" hidden>Prefere conversar? Chame a lanchonete no WhatsApp</a>
     </div>
   </details>
-  <div class="repetir" id="repetir" hidden>
-    <div class="repetir-t"><b>Já pediu por aqui antes?</b><span id="repetirTxt"></span></div>
-    <button class="repetir-b" type="button" id="repetirBtn">Pedir de novo</button>
-  </div>
   <div id="menu"><div class="nores" id="carregando"><strong>Carregando o cardápio…</strong>Se demorar, atualize a página.</div></div>
   <div id="resultados" hidden></div>
 </main>
@@ -452,15 +541,14 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
 
 <button class="bagbtn" id="bagbtn" type="button" hidden>
   <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="n" id="bagN">0</span></span>
-  <span class="t">Ver meu pedido<small id="bagSub">Toque aqui para enviar</small></span>
-  <span class="v" id="bagV">R$ 0,00</span>
+  <span class="tv"><span class="t">Ver meu pedido</span><span class="v" id="bagV">R$ 0,00</span><small class="sub"><span id="bagSub">0 itens</span><span class="tq"> · toque aqui para enviar</span></small></span>
 </button>
 
 <!-- janela: escolher lanche -->
 <div class="overlay" id="ovItem" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="itNome">
     <div class="sh-head">
-      <div style="flex:1;min-width:0"><h3 id="itNome"></h3><p id="itDesc"></p></div>
+      <div style="flex:1;min-width:0"><h3 id="itNome"></h3></div>
       <button class="x" type="button" data-close aria-label="Fechar">×</button>
     </div>
     <div class="sh-body" id="itBody"></div>

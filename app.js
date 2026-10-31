@@ -205,6 +205,11 @@
   $("limpar").addEventListener("click", () => { busca.value = ""; mostrarBusca(); busca.focus(); });
   if (busca.value) mostrarBusca();                     // cliente digitou (ou o navegador preencheu) antes do cardápio terminar de carregar
 
+  /* barra de categorias: marca as bordas que ainda têm categoria escondida (o CSS põe o degradê) */
+  const barra = $("cats");
+  const bordas = () => { const max = barra.scrollWidth - barra.clientWidth; barra.classList.toggle("mais-esq", barra.scrollLeft > 2); barra.classList.toggle("mais-dir", barra.scrollLeft < max - 2); };
+  barra.addEventListener("scroll", bordas, { passive: true }); window.addEventListener("resize", bordas); bordas();
+
   /* categoria ativa na barra */
   const links = [...document.querySelectorAll(".cats a")];
   if ("IntersectionObserver" in window) {
@@ -220,8 +225,23 @@
   }
 
   /* ---------------- avisos ---------------- */
-  let toastT;
-  function avisar(t, ms) { const el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms || 3200); }
+  let toastT, BP_medirBag = () => {};
+  /* altura real do botão "Ver meu pedido" em --bag-h: o aviso fica sempre acima dele e o foco não se esconde atrás */
+  (function () {
+    const bb = $("bagbtn"), raiz = document.documentElement;
+    const medir = () => raiz.style.setProperty("--bag-h", (bb.hidden ? 0 : bb.offsetHeight) + "px");
+    if ("ResizeObserver" in window) new ResizeObserver(medir).observe(bb);
+    window.addEventListener("resize", medir); medir();
+    BP_medirBag = medir;
+  })();
+  // aviso com título curto (em destaque) e, opcional, uma linha menor embaixo
+  function avisar(t, ms, sub) {
+    const el = $("toast");
+    if (sub) el.innerHTML = `<b>${esc(t)}</b><small>${esc(sub)}</small>`; else el.textContent = t;
+    el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms || 3200);
+  }
+  // tocar no aviso só fecha o aviso (o toque não "atravessa" para o lanche de baixo)
+  $("toast").addEventListener("click", e => { e.stopPropagation(); clearTimeout(toastT); $("toast").hidden = true; });
 
   /* ---------------- janelas (com botão voltar do celular) ---------------- */
   let travaCliqueAte = 0, ultimoFoco = null;
@@ -231,6 +251,7 @@
     if (aberta() === ov) return;
     abertaEm = Date.now();
     ultimoFoco = document.activeElement;
+    $("toast").hidden = true;                       // aviso antigo não fica por cima da janela que abriu
     $(ov).hidden = false; document.body.classList.add("lock");
     try { history.pushState({ bp: ov }, ""); } catch (e) {}
   }
@@ -283,7 +304,6 @@
     if (restante() < 1) { avisar(`Seu pedido já tem ${LIMITES.itensSacola} itens, que é o máximo por pedido. Para mais, fale direto com a lanchonete no WhatsApp.`, 6000); return; }
     F = { it, passo: "qtd", qtd: 1, modo: null, comum: novoJeito(), un: [], adicionando: false };
     $("itNome").textContent = it.nome;
-    $("itDesc").innerHTML = descHtml(it.ingredientes);
     renderItem(); abrir("ovItem");
     try { $("ovItem").querySelector("[data-close]").focus({ preventScroll: true }); } catch (e) {}
   }
@@ -325,7 +345,8 @@
 
   function renderItem() {
     const it = F.it, nome = `<b>${esc(it.nome)}</b>`;
-    let body = progresso(), foot = "";
+    // descrição fica no corpo (que rola); o cabeçalho (nome + ×) fica sempre à vista
+    let body = (F.passo !== "confere" && it.ingredientes ? `<p class="it-desc">${descHtml(it.ingredientes)}</p>` : "") + progresso(), foot = "";
     const voltar = `<button class="big ghost" type="button" data-acao="voltar">Voltar</button>`;
     if (F.passo === "qtd") {
       body += fala(`Quantos ${nome} você quer?`) + `
@@ -362,13 +383,12 @@
         if (vistos.has(d.texto)) return; vistos.add(d.texto); dicas.push({ ...d, k });
       });
       if (iguais()) juntaDicas("c", F.comum, F.qtd, F.qtd > 1); else F.un.forEach((u, i) => juntaDicas(String(i), u, 1, false));
-      body += fala("Confere pra mim se está certinho:") + `
+      body += fala("Confere pra mim se está certinho:", "intro") + `
         <ul class="resumo">${ls.map(l => `<li><span class="q">${l.qtd}x</span><div><b>${esc(BP.frase(l, cat).replace(/^\d+ /, ""))}</b>${l.obs ? `<small>Obs: ${esc(l.obs)}</small>` : ""}</div><span class="v">${brl(BP.precoLinha(l, cat))}</span></li>`).join("")}</ul>
         ${dicas.map(d => fala(esc(d.texto) + acaoDica(d), "dica")).join("")}`;
       foot = `<div class="foot-row"><button class="big ghost" type="button" data-acao="voltar">Corrigir</button>
         <button class="big add-btn" type="button" data-acao="confirmar"><span>Adicionar ao pedido</span><span class="nw">${brl(totalFluxo())}</span></button></div>`;
     }
-    $("itDesc").hidden = F.passo === "confere";
     $("itBody").innerHTML = body; $("itFoot").innerHTML = foot;
     $("itBody").scrollTop = 0;
   }
@@ -431,8 +451,8 @@
     const entrou = BP.contar(sacola) - antes;
     fechar("ovItem");
     if (entrou < pedido) avisar(`Só cabem ${LIMITES.itensSacola} itens por pedido. Entraram ${entrou}.`, 6000);
-    else if (juntou) avisar(`Juntei com o que já estava no seu pedido. Agora são ${qtdNaSacola(F.it.id)} ${nome}. Quando terminar, toque em "Ver meu pedido".`, 7000);
-    else avisar(`Pronto! ${entrou}x ${nome} no seu pedido. Pode escolher mais lanches ou tocar em "Ver meu pedido" para enviar.`, 7000);
+    else if (juntou) avisar(`✓ Juntei: ${qtdNaSacola(F.it.id)}x ${nome} no seu pedido`, 5000, "Toque em Ver meu pedido para enviar.");
+    else avisar(`✓ ${entrou}x ${nome} no seu pedido`, 5000, "Toque em Ver meu pedido para enviar.");
     const bb = $("bagbtn"); bb.classList.remove("bump"); void bb.offsetWidth; bb.classList.add("bump");
   }
 
@@ -457,9 +477,10 @@
     const ordem = BP.agrupar(sacola), n = BP.contar(sacola);
     const separados = [...new Set(sacola.map(l => l.id))].filter(id => sacola.filter(l => l.id === id).length > 1);
     const muitos = sacola.filter(l => l.qtd >= 6);
-    let conversa = `Você tem <b>${n} ${n === 1 ? "item" : "itens"}</b> no seu pedido. Dá para mudar a quantidade com o − e o +. Estando tudo certo, toque em <b>Pedir pelo WhatsApp</b>.`;
-    if (separados.length) conversa += ` Os ${separados.map(id => esc(cat.itens[id].nome)).join(" e ")} aparecem separados porque vão de jeitos diferentes. Está certinho assim.`;
-    $("bagFala").innerHTML = fala(conversa) + muitos.map(l => fala(`Só conferindo: são <b>${l.qtd} ${esc(cat.itens[l.id].nome)}</b> mesmo?`, "aviso")).join("");
+    // balão curto (em tela compacta ele some: classe "intro") para os lanches aparecerem logo
+    const conversa = `Confira seu pedido. Para mudar a quantidade, use o − e o +.`;
+    const sep = separados.length ? fala(`Os ${separados.map(id => esc(cat.itens[id].nome)).join(" e ")} aparecem separados porque vão de jeitos diferentes.`) : "";
+    $("bagFala").innerHTML = fala(conversa, "intro") + sep + muitos.map(l => fala(`Só conferindo: são <b>${l.qtd} ${esc(cat.itens[l.id].nome)}</b> mesmo?`, "aviso")).join("");
     $("lines").innerHTML = ordem.map(l => {
       const it = cat.itens[l.id], k = esc(BP.chave(l));
       const ns = l.adds.map(a => cat.itens[a].nome.toLowerCase());
@@ -559,10 +580,10 @@
   }
   function atualizarTudo() {
     const n = BP.contar(sacola), tot = BP.totalSacola(sacola, cat);
-    $("bagbtn").hidden = !n;
+    $("bagbtn").hidden = !n; BP_medirBag();
     $("bagN").textContent = n;
     $("bagV").textContent = brl(tot);
-    $("bagSub").textContent = (n === 1 ? "1 item" : n + " itens") + " · toque aqui para enviar";
+    $("bagSub").textContent = n === 1 ? "1 item" : n + " itens";
     $("tot").textContent = brl(tot);
     marcarSacola(); desenharRepetir();
     if (aberta() === "ovBag") {
