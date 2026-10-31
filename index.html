@@ -133,15 +133,21 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);h
 
 .list{display:grid;grid-template-columns:1fr;column-gap:56px}
 @media (min-width:780px){.list{grid-template-columns:1fr 1fr}}
-.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 12px;align-items:start;padding:16px 0 15px;border-bottom:1.5px dashed var(--line);cursor:pointer;container:item / inline-size}
+.item{padding:16px 0 15px;border-bottom:1.5px dashed var(--line);cursor:pointer;container:item / inline-size}
+.item-in{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 12px;align-items:start}
 /* celular (item até 440px): nome na linha toda, sem quebrar; preço e "+ Pedir" lado a lado embaixo dele.
    No tablet/PC (item mais largo) fica tudo numa linha: nome, preço e botão. Sem pontinhos em nenhum caso. */
 @container item (max-width:440px){
-  .item>div,.item .top{display:contents}
-  .item .cat-label,.item .name,.item .selo,.item .desc,.item .incart{grid-column:1 / -1}
-  .item .cat-label{order:0}.item .name{order:1;margin-bottom:8px;white-space:nowrap;font-size:clamp(17px,9cqi,23px)}
-  .item .top .price{order:2;justify-self:start;align-self:center;margin-left:0}.item .add{order:3}
-  .item .selo,.item .desc,.item .incart{order:4;justify-self:start}
+  /* celular: linha 1 = nome + preço (largura toda, nunca quebram);
+     embaixo, ingredientes à esquerda e "+ Pedir" à direita, alinhado com o preço */
+  .item-in{grid-template-areas:"cat cat" "top top" "selo add" "desc add" "incart add";grid-template-rows:auto auto auto 1fr auto;column-gap:14px}
+  .item-in>div{display:contents}
+  .item .cat-label{grid-area:cat}
+  .item .top{grid-area:top;flex-wrap:nowrap;align-items:center;gap:0 12px;margin-bottom:2px}
+  .item .top .name{flex:1 1 auto;padding-top:0;white-space:nowrap;font-size:var(--fs-nome,23px)}
+  .item .top .price{flex:none;margin-left:auto}
+  .item .selo{grid-area:selo;justify-self:start;margin-top:6px}.item .desc{grid-area:desc}.item .incart{grid-area:incart;justify-self:start}
+  .item .add{grid-area:add;align-self:start;margin-top:8px}
 }
 .item:hover .name{color:var(--red)}
 /* nome e preço lado a lado; se o nome não couber inteiro, o preço desce (com os pontinhos) e o nome ganha a linha toda */
@@ -459,7 +465,7 @@ footer .wrap{padding-block:34px 110px;display:flex;flex-direction:column;align-i
   .promo *{color:#000!important;text-shadow:none!important}
   .list{grid-template-columns:1fr 1fr!important}
   .item,.pcard,.chip{break-inside:avoid;box-shadow:none!important}
-  .item{grid-template-columns:1fr!important;padding:8px 0}
+  .item{padding:8px 0}.item-in{grid-template-columns:1fr!important}
   section{break-inside:auto}.sec-head{break-after:avoid}
   .price,.price *{background:none!important;box-shadow:none!important;color:#000!important}
 }

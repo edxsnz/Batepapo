@@ -118,7 +118,7 @@
     txt = String(txt || ""); if (DESC_CACHE.has(txt)) return DESC_CACHE.get(txt);
     const m = /,?\s*(Maionese,\s*Ketchup e Mostarda)\s*$/i.exec(txt);
     const base = m ? txt.slice(0, m.index) : txt;
-    const lista = base.split(",").map(s => s.trim()).filter(Boolean).map(s => `<span class="i">${esc(s)}</span>`).join('<i class="sep"> · </i>');
+    const lista = base.split(",").map(s => s.trim()).filter(Boolean).map((s, i, arr) => `<span class="i">${esc(s)}${i < arr.length - 1 ? '<i class="sep"> ·</i>' : ""}</span>`).join(" ");   // o ponto fica preso à palavra anterior: nunca começa uma linha
     const out = `<span class="ings">${lista}</span>` + (m ? `<span class="molhos">Com maionese, ketchup e mostarda</span>` : "");
     DESC_CACHE.set(txt, out); return out;
   }
@@ -128,7 +128,7 @@
   const tagSacola = id => `<span class="incart" data-incart="${esc(id)}" hidden></span>`;
   const btnAdd = it => `<button class="add" type="button" data-id="${esc(it.id)}" aria-label="Pedir ${esc(it.nome)}">${PLUS}<span>Pedir</span></button>`;
   const linhaItem = (it, mostrarCat) => `
-    <div class="item" data-id="${esc(it.id)}">
+    <div class="item" data-id="${esc(it.id)}"><div class="item-in">
       <div>
         ${mostrarCat ? `<div class="cat-label">${esc(it.categoria)}</div>` : ""}
         <div class="top"><span class="name">${esc(it.nome)}</span>${etiqueta(it.preco)}</div>
@@ -137,7 +137,7 @@
         ${tagSacola(it.id)}
       </div>
       ${btnAdd(it)}
-    </div>`;
+    </div></div>`;
 
   const C = Array.isArray(window.CARDAPIO) ? window.CARDAPIO : [];
   const secoes = C.map(c => ({ c, id: "sec-" + slug(c && c.categoria), itens: (c && Array.isArray(c.itens) ? c.itens : []).map(i => cat.itens[slug(c.categoria) + "/" + slug(i && i.nome)]).filter(Boolean) }))
@@ -194,7 +194,7 @@
     $("resultados").innerHTML = r.length
       ? `<div class="results-head" role="status"><b>${r.length}</b> ${r.length === 1 ? "resultado" : "resultados"} para “${esc(q.slice(0, 60))}”</div><div class="list">${r.map(it => linhaItem(it, true)).join("")}</div>`
       : `<div class="nores" role="status"><strong>Nada encontrado</strong>Tente outro nome, como “x-tudo”, “frango” ou “bacon”.</div>`;
-    marcarSacola();
+    marcarSacola(); agendarAjuste();
   }
   busca.addEventListener("input", () => {
     mostrarBusca();
@@ -571,6 +571,37 @@
     const u = ultimoPedido(); if (!u.length) { desenharRepetir(); return; }
     mudar(() => u); $("bagbtn").onclick();
   };
+
+  /* Nome do lanche e preço sempre na mesma linha no celular: se um nome comprido não couber,
+     a letra DESSE nome diminui um pouco (até 16px) em vez de quebrar a linha. */
+  function ajustarNomes() {
+    const tops = [...document.querySelectorAll("#menu .item .top, #resultados .item .top")];
+    const nomes = tops.map(t => t.querySelector(".name"));
+    nomes.forEach(n => { if (n) { n.style.removeProperty("--fs-nome"); n.style.whiteSpace = ""; } });
+    const ativos = tops.filter((t, i) => nomes[i] && getComputedStyle(nomes[i]).whiteSpace === "nowrap");   // só no celular
+    if (!ativos.length) return;
+    const sobra = t => { const n = t.querySelector(".name"); return n.scrollWidth > n.clientWidth + 1 || t.scrollWidth > t.clientWidth + 1; };
+    // 1) descobre o tamanho que o nome mais comprido precisa para caber; 2) usa esse MESMO tamanho em todos (lista alinhada)
+    const base = parseFloat(getComputedStyle(ativos[0].querySelector(".name")).fontSize) || 23;
+    let fs = base;
+    for (const t of ativos) {
+      const n = t.querySelector(".name");
+      while (sobra(t) && fs > 14) { fs -= 0.5; n.style.setProperty("--fs-nome", fs + "px"); }
+    }
+    // a lista toda diminui no máximo 20%; se mesmo assim algum nome não couber, só ele diminui mais (até 14px)
+    const comum = Math.max(fs, Math.round(base * 0.8 * 2) / 2);
+    ativos.forEach(t => {
+      const n = t.querySelector(".name");
+      let f = comum; if (f < base) n.style.setProperty("--fs-nome", f + "px");
+      while (sobra(t) && f > 14) { f -= 0.5; n.style.setProperty("--fs-nome", f + "px"); }
+      if (sobra(t)) n.style.whiteSpace = "normal";   // último recurso (tela minúscula + fonte enorme): quebra o nome, nunca o preço
+    });
+  }
+  let ajusteAgendado = 0;
+  const agendarAjuste = () => { cancelAnimationFrame(ajusteAgendado); ajusteAgendado = requestAnimationFrame(ajustarNomes); };
+  if ("ResizeObserver" in window) new ResizeObserver(agendarAjuste).observe(document.documentElement);
+  else addEventListener("resize", agendarAjuste);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(agendarAjuste);
 
   /* ---------------- atualizar tela ---------------- */
   function marcarSacola() {
