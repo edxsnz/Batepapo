@@ -131,7 +131,7 @@
     <div class="item" data-id="${esc(it.id)}">
       <div>
         ${mostrarCat ? `<div class="cat-label">${esc(it.categoria)}</div>` : ""}
-        <div class="top"><span class="name">${esc(it.nome)}</span><span class="dots"></span>${etiqueta(it.preco)}</div>
+        <div class="top"><span class="name">${esc(it.nome)}</span>${etiqueta(it.preco)}</div>
         ${it.destaque ? `<span class="selo">${esc(it.destaque)}</span>` : ""}
         ${it.ingredientes ? `<div class="desc">${descHtml(it.ingredientes)}</div>` : ""}
         ${tagSacola(it.id)}

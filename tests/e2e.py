@@ -299,6 +299,18 @@ with sync_playwright() as p:
     check(not pg.is_visible(".add") and not pg.is_visible(".bar"), "na impressão somem botões e barra de busca")
     check(pg.is_visible("#menu .item .name"), "na impressão o cardápio continua visível")
     ctx.close()
+    print("\n[15] Nome do lanche numa linha só, preço sempre no mesmo lugar")
+    for w, z in ((320, "1"), (320, "1.3"), (360, "1"), (360, "1.3"), (390, "1"), (412, "1"), (430, "1.3"), (768, "1"), (1366, "1")):
+        ctx = b.new_context(viewport={"width": w, "height": 900}); pg = ctx.new_page(); pg.goto(URL); pg.wait_for_selector("#carregando", state="detached")
+        pg.evaluate(f"document.documentElement.style.zoom = '{z}'"); pg.wait_for_timeout(150)
+        r = pg.evaluate("""() => { const quebra = [], modos = new Set();
+          for (const it of document.querySelectorAll('#menu .item')) {
+            const n = it.querySelector('.name'), rg = document.createRange(); rg.selectNodeContents(n);
+            if (new Set([...rg.getClientRects()].map(x => Math.round(x.top))).size > 1) quebra.push(n.textContent);
+            modos.add(getComputedStyle(it.querySelector('.top')).display); }
+          return { quebra, modos: [...modos], pontinhos: document.querySelectorAll('#menu .dots').length }; }""")
+        check(not r["quebra"] and len(r["modos"]) == 1 and not r["pontinhos"], f"{w}px zoom {z}: nenhum nome quebrado, todos os lanches no mesmo arranjo ({r['quebra'][:3]} {r['modos']})")
+        ctx.close()
     b.close()
 
 print(f"\nRESULTADO: {ok} ok, {len(falhas)} falhas")

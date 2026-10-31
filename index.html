@@ -134,20 +134,24 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,38px);h
 .list{display:grid;grid-template-columns:1fr;column-gap:56px}
 @media (min-width:780px){.list{grid-template-columns:1fr 1fr}}
 .item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 12px;align-items:start;padding:16px 0 15px;border-bottom:1.5px dashed var(--line);cursor:pointer;container:item / inline-size}
-/* item estreito (celular pequeno ou fonte grande): nome na linha toda, preço e "+ Pedir" lado a lado embaixo */
-@container item (max-width:300px){
+/* celular (item até 440px): nome na linha toda, sem quebrar; preço e "+ Pedir" lado a lado embaixo dele.
+   No tablet/PC (item mais largo) fica tudo numa linha: nome, preço e botão. Sem pontinhos em nenhum caso. */
+@container item (max-width:440px){
   .item>div,.item .top{display:contents}
   .item .cat-label,.item .name,.item .selo,.item .desc,.item .incart{grid-column:1 / -1}
-  .item .cat-label{order:0}.item .name{order:1;margin-bottom:8px}.item .dots{display:none}
-  .item .price{order:2;justify-self:start;align-self:center}.item .add{order:3}
+  .item .cat-label{order:0}.item .name{order:1;margin-bottom:8px;white-space:nowrap;font-size:clamp(17px,9cqi,23px)}
+  .item .top .price{order:2;justify-self:start;align-self:center;margin-left:0}.item .add{order:3}
   .item .selo,.item .desc,.item .incart{order:4;justify-self:start}
 }
 .item:hover .name{color:var(--red)}
 /* nome e preço lado a lado; se o nome não couber inteiro, o preço desce (com os pontinhos) e o nome ganha a linha toda */
-.top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0}
-.top .name{flex:0 1 auto}
+/* nome + pontinhos + preço sempre na MESMA linha: o nome comprido quebra entre palavras
+   e o preço fica fixo à direita, alinhado com o botão Pedir (todos os lanches iguais) */
+.top{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:0 10px;min-width:0}
+.top .name{flex:0 1 auto;min-width:0;overflow-wrap:normal;word-break:normal;hyphens:none}
+.top .price{flex:none;margin-left:auto}
+.top .name{padding-top:5px}
 .name{font-family:var(--cond);font-weight:800;font-size:23px;line-height:1.05;letter-spacing:.02em;text-transform:uppercase;min-width:0;hyphens:none;transition:color .15s}
-.dots{flex:1 1 14px;min-width:14px;height:0;border-bottom:3px dotted var(--dots);transform:translateY(5px)}
 .desc{color:var(--muted);font-size:14.5px;line-height:1.55;margin-top:5px;max-width:58ch}
 .cat-label{font-family:var(--cond);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:2px}
 .incart{display:inline-block;margin-top:7px;font-family:var(--cond);font-weight:800;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--wa-deep)}
