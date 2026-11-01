@@ -112,14 +112,21 @@
     return out.sort((a, b) => b.score - a.score).map(r => r.it);
   }
 
-  /* ingredientes: lista limpa com pontos e os molhos numa linha à parte (só na tela; o texto original não muda) */
+  /* ingredientes como uma frase fácil de ler: "Pão, filé, queijo, alface, tomate e batata palha."
+     Os molhos vão numa linha à parte. Só muda a tela; o texto no cardapio.js continua igual. */
+  const NOMES_PROPRIOS = /^(catupiry)$/i;
   const DESC_CACHE = new Map();
   function descHtml(txt) {
     txt = String(txt || ""); if (DESC_CACHE.has(txt)) return DESC_CACHE.get(txt);
     const m = /,?\s*(Maionese,\s*Ketchup e Mostarda)\s*$/i.exec(txt);
     const base = m ? txt.slice(0, m.index) : txt;
-    const lista = base.split(",").map(s => s.trim()).filter(Boolean).map((s, i, arr) => `<span class="i">${esc(s)}${i < arr.length - 1 ? '<i class="sep"> ·</i>' : ""}</span>`).join(" ");   // o ponto fica preso à palavra anterior: nunca começa uma linha
-    const out = `<span class="ings">${lista}</span>` + (m ? `<span class="molhos">Com maionese, ketchup e mostarda</span>` : "");
+    const partes = base.split(",").map(s => s.trim()).filter(Boolean)
+      .map((s, i) => i === 0 ? s : s.split(" ").map(w => NOMES_PROPRIOS.test(w) ? w : w.toLowerCase()).join(" "));
+    let frase = "";
+    if (partes.length === 1) frase = partes[0];
+    else if (/\se\s/.test(partes[partes.length - 1])) frase = partes.join(", ");          // o último já tem "e" ("calabresa e tomate")
+    else frase = partes.slice(0, -1).join(", ") + " e " + partes[partes.length - 1];
+    const out = `<span class="ings">${esc(frase)}${frase ? "." : ""}</span>` + (m ? `<span class="molhos">Com maionese, ketchup e mostarda.</span>` : "");
     DESC_CACHE.set(txt, out); return out;
   }
 
@@ -148,10 +155,10 @@
   const destaques = cat.lista.filter(it => it.destaque);
   const promo = destaques.map(it => `
     <article class="promo" data-id="${esc(it.id)}">
-      <div class="promo-burst" aria-hidden="true"><span><small>Só</small>${brl(it.preco).replace(",00", "")}</span></div>
       <div class="promo-body">
         <div class="promo-kicker">${esc(it.destaque)}</div>
         <h2 class="promo-name">${esc(it.nome)}</h2>
+        <div class="promo-preco" aria-hidden="true"><small>R$</small>${brl(it.preco).replace("R$", "").trim()}</div>
         ${it.ingredientes ? `<p class="promo-desc">${descHtml(it.ingredientes)}</p>` : ""}
         <div class="promo-row"><span class="sr-only">${brl(it.preco)}</span><button class="promo-btn add" type="button" data-id="${esc(it.id)}">Pedir este lanche</button></div>
         ${tagSacola(it.id)}
@@ -160,9 +167,7 @@
 
   $("menu").innerHTML = (cat.lista.length ? "" : `<div class="nores"><strong>Cardápio indisponível</strong>Tente de novo em instantes.</div>`) + promo +
     secoes.map(({ c, id, itens }) => {
-      const head = `<div class="sec-head"><div class="badge">${icon(c.icone)}</div>
-        <div class="sec-title"><h2>${esc(c.categoria)}</h2><div class="sec-sub">${esc(c.subtitulo || itens.length + (itens.length === 1 ? " opção" : " opções"))}</div></div>
-        <div class="rule" aria-hidden="true"></div></div>`;
+      const head = `<div class="sec-head"><div class="sec-title"><h2>${esc(c.categoria)}</h2><div class="sec-sub">${esc(c.subtitulo || itens.length + (itens.length === 1 ? " opção" : " opções"))}</div></div></div>`;
       let body;
       if (c.icone === "porcao") body = `<div class="cards">${itens.map(it => `
         <div class="pcard" data-id="${esc(it.id)}"><span class="name">${esc(it.nome)}</span>
@@ -173,6 +178,18 @@
       else body = `<div class="list">${itens.map(it => linhaItem(it)).join("")}</div>`;
       return `<section id="${id}">${head}${body}</section>`;
     }).join("");
+
+  /* quadro de feltro da capa: alguns lanches com o preço de verdade (vem do cardapio.js); tocar abre o lanche */
+  const placa = $("placaLista");
+  if (placa) {
+    const escolhidos = [];
+    const pega = it => { if (it && !escolhidos.includes(it) && it.tipo !== "adicional") escolhidos.push(it); };
+    secoes.slice(0, 1).forEach(s => pega(s.itens[0]));
+    pega(cat.lista.find(it => /x-tudo$/i.test(it.nome)));
+    destaques.forEach(pega);
+    secoes.forEach(s => { if (escolhidos.length < 6) pega(s.itens[0]); });
+    placa.innerHTML = escolhidos.slice(0, 6).map(it => `<li><button type="button" data-id="${esc(it.id)}" aria-label="Pedir ${esc(it.nome)}, ${brl(it.preco)}"><span class="pn">${esc(it.nome)}</span><span class="pp">${brl(it.preco).replace("R$", "").trim()}</span><span class="pmais" aria-hidden="true">+</span></button></li>`).join("");
+  }
 
   /* quadro "Como fazer seu pedido": aberto na primeira visita; quem já sabe pode fechar e ele lembra */
   const como = $("como");
@@ -198,7 +215,7 @@
   }
   busca.addEventListener("input", () => {
     mostrarBusca();
-    const topo = document.querySelector(".checker").offsetTop + 18;
+    const capa = document.querySelector(".hero"), topo = capa ? capa.offsetTop + capa.offsetHeight : 0;   // a busca fica logo abaixo da capa
     if (window.scrollY > topo) window.scrollTo({ top: topo, behavior: "auto" });
   });
   busca.addEventListener("keydown", e => { if (e.key === "Enter") busca.blur(); if (e.key === "Escape") { busca.value = ""; mostrarBusca(); } });
@@ -458,7 +475,7 @@
 
   document.addEventListener("click", e => {
     if (Date.now() < travaCliqueAte || aberta()) return;
-    const alvo = e.target.closest(".add, .item, .pcard, .promo"); if (!alvo) return;
+    const alvo = e.target.closest(".add, .item, .pcard, .promo, .placa-lista button"); if (!alvo) return;
     abrirItem(alvo.dataset.id);
   });
 

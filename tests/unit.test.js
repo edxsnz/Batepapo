@@ -2,8 +2,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 global.window = globalThis;
-require("/home/claude/site/cardapio.js");
-require("/home/claude/site/core.js");
+require(require("path").join(__dirname, "..", "cardapio.js"));
+require(require("path").join(__dirname, "..", "core.js"));
 const BP = globalThis.BP;
 const cat = BP.catalogo(globalThis.CARDAPIO);
 const id = (c, n) => BP.slug(c) + "/" + BP.slug(n);

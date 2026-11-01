@@ -8,26 +8,26 @@
 <meta name="color-scheme" content="light">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<link rel="preload" href="fonts/bowlby-one-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/barlow-condensed-800.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-@font-face{font-family:"Bowlby One";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/bowlby-one-400.woff2) format("woff2")}
 @font-face{font-family:"Figtree";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/figtree-400.woff2) format("woff2")}
 @font-face{font-family:"Figtree";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/figtree-600.woff2) format("woff2")}
 @font-face{font-family:"Figtree";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/figtree-700.woff2) format("woff2")}
 @font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/barlow-condensed-700.woff2) format("woff2")}
 @font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:800;font-display:swap;src:url(fonts/barlow-condensed-800.woff2) format("woff2")}
-:root{--red:#c8281e;--mustard:#f6b51e;--paper:#fff8ee;--card:#fff;--ink:#2b1710;--muted:#7d6253;--line:#efdfcd;--ok:#15803f;
-  --display:"Bowlby One","Arial Black",Impact,sans-serif;--cond:"Barlow Condensed","Arial Narrow",sans-serif;--body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+/* mesmo visual da Versão 3: feltro, azulejo e mostarda */
+:root{--red:#c8321f;--mustard:#f2b807;--mustard-d:#b98a00;--feltro:#1e3b30;--letra:#f2f0e6;--paper:#f6f8f5;--card:#fff;--ink:#1e3b30;--muted:#55665d;--line:#d9e1da;--ok:#15803f;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;--cond:"Barlow Condensed","Arial Narrow",sans-serif;--body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
 .wrap{max-width:760px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
-h1{font-family:var(--display);font-weight:400;color:var(--red);font-size:clamp(28px,6vw,40px);line-height:1;margin:0}
+h1{font-family:var(--display);font-weight:800;color:var(--letra);font-size:clamp(30px,7vw,44px);line-height:1;margin:0;padding:14px 18px;border-radius:8px;border:8px solid #6e4b2e;text-transform:uppercase;letter-spacing:.05em;background:repeating-linear-gradient(180deg,var(--feltro) 0 11px,#183027 11px 12px)}
 p{margin:0;color:var(--muted)}
 .btns{display:flex;gap:10px;flex-wrap:wrap}
-.card{background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:18px;box-shadow:5px 5px 0 var(--mustard)}
-.card h2{font-family:var(--cond);font-weight:800;font-size:22px;text-transform:uppercase;margin:0 0 6px;letter-spacing:.04em}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:18px}
+.card h2{font-family:var(--cond);font-weight:800;font-size:24px;margin:0 0 6px}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-td{padding:7px 0;border-bottom:1.5px dashed var(--line);vertical-align:top}
+td{padding:7px 0;border-bottom:1.5px solid var(--line);vertical-align:top}
 td.v{text-align:right;white-space:nowrap;font-weight:700;padding-left:12px}
 .alerta{background:#fff1ef;border:2px solid var(--red);border-radius:12px;padding:12px 14px;color:var(--ink);overflow-wrap:anywhere}
 .alerta b{color:var(--red)}

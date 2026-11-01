@@ -1,4 +1,4 @@
-# Cardápio Lanchonete Bate Papo — Versão 2
+# Cardápio Lanchonete Bate Papo — Versão 3
 
 ## Arquivos
 
@@ -32,7 +32,7 @@ A mensagem que chega no WhatsApp não leva preço, de propósito. Para saber o v
 
 1. Abra `seusite/conferir.html` (deixe salvo nos favoritos do celular da lanchonete).
 2. Copie a mensagem do cliente no WhatsApp e cole na página.
-3. O total aparece calculado com os preços oficiais. Linhas que não são do cardápio aparecem em vermelho.
+3. O total aparece calculado com os preços oficiais. Linhas que não são do cardápio aparecem destacadas num aviso.
 
 ## Pedido grande ou WhatsApp que não abre
 
@@ -66,3 +66,12 @@ O sabotador usa sementes fixas: se ele achar um defeito, o defeito aparece sempr
 - "Adicionar ao pedido", "Ver meu pedido" e os botões das janelas se reorganizam sozinhos em tela pequena ou com fonte grande: nada sai da tela e o preço nunca é cortado.
 - O aviso "Pronto!" fica acima do botão "Ver meu pedido"; tocar nele só fecha o aviso.
 - Teste de layout: `cd tests && python3 layout.py` (com o site em http://127.0.0.1:8765/). Ele confere 16 tamanhos de tela (celular pequeno, comum, grande, deitado, fonte grande, tablet e PC) em 18 situações do pedido e reprova botão fora da tela, cortado, pequeno demais, aviso cobrindo o botão ou palavra de título partida.
+
+## Visual da Versão 3
+
+- **Ideia:** o quadro de letras de feltro com os preços, pendurado na parede de azulejo da lanchonete, com o barrado de azulejo vermelho embaixo. O quadro aparece na capa e no rodapé; o resto do site é limpo, para ficar fácil de ler.
+- **Quadro da capa:** mostra alguns lanches com o preço de verdade, puxado do `cardapio.js` (muda sozinho quando você muda o preço). Tocar numa linha abre o pedido daquele lanche. No celular aparecem 4 lanches; no computador, 6.
+- **Cores** (no começo do CSS do `index.html`): verde-feltro `#1e3b30`, letra `#f2f0e6`, azulejo `#f6f8f5`, mostarda `#f2b807` (botão Pedir), ketchup `#c8321f` (avisos e barrado), verde do WhatsApp só no botão de enviar.
+- **Letras:** Barlow Condensed (quadro, nomes e preços) e Figtree (textos). Caixa-alta só no quadro, como as letrinhas de verdade.
+- **Ingredientes** aparecem como frase ("Pão, filé, queijo, alface, tomate e batata palha."); no `cardapio.js` continuam escritos do mesmo jeito.
+- As páginas `conferir.html` e `verificar.html` usam o mesmo visual.

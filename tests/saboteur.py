@@ -489,7 +489,7 @@ def cenario_privacidade(b):
         fora = [u for u in pedidos if not u.startswith(URL) and not u.startswith("data:")]
         check(not fora, f"{pagina.split('/')[-1] or 'index'}: pedidos para fora do site: {fora[:3]}")
         check(not csp, f"{pagina.split('/')[-1] or 'index'}: violação de CSP {csp[:1]}")
-        ok = pg.evaluate("async () => { const fs = ['16px \"Bowlby One\"', '700 16px \"Barlow Condensed\"', '800 16px \"Barlow Condensed\"', '400 16px Figtree', '700 16px Figtree']; return Promise.all(fs.map(async f => (await document.fonts.load(f, 'Aç')).length > 0)); }")
+        ok = pg.evaluate("async () => { const fs = ['600 16px \"Barlow Condensed\"', '700 16px \"Barlow Condensed\"', '800 16px \"Barlow Condensed\"', '400 16px Figtree', '700 16px Figtree']; return Promise.all(fs.map(async f => (await document.fonts.load(f, 'Aç')).length > 0)); }")
         check(all(ok), f"fontes próprias não carregaram: {ok}")
         csp_meta = pg.evaluate("() => document.querySelector('meta[http-equiv=Content-Security-Policy]').content")
         check("googleapis" not in csp_meta and "gstatic" not in csp_meta and "'unsafe-eval'" not in csp_meta and "script-src 'self'" in csp_meta, f"CSP afrouxada: {csp_meta[:120]}")
