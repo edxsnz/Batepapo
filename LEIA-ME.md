@@ -75,3 +75,9 @@ O sabotador usa sementes fixas: se ele achar um defeito, o defeito aparece sempr
 - **Letras:** Barlow Condensed (quadro, nomes e preços) e Figtree (textos). Caixa-alta só no quadro, como as letrinhas de verdade.
 - **Ingredientes** aparecem como frase ("Pão, filé, queijo, alface, tomate e batata palha."); no `cardapio.js` continuam escritos do mesmo jeito.
 - As páginas `conferir.html` e `verificar.html` usam o mesmo visual.
+
+## Prévia ao compartilhar o link (WhatsApp, Facebook, Instagram)
+
+- A imagem é o arquivo `compartilhar.jpg` (1200 × 630). Ela precisa estar na mesma pasta do `index.html` no GitHub.
+- As tags ficam no começo do `index.html` e usam o endereço completo `https://edxsnz.github.io/Batepapo/`. Se o endereço do site mudar (outro nome de repositório ou domínio próprio), troque esse endereço nas linhas indicadas.
+- O WhatsApp guarda a prévia de um link por um tempo. Se você já tinha mandado o link antes, a prévia nova pode demorar a aparecer nessa conversa; em conversas novas ela já vem certa. Para testar na hora, mande o link com algo no final, por exemplo `https://edxsnz.github.io/Batepapo/?v=2`.
