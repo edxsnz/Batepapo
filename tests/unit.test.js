@@ -137,3 +137,14 @@ test("dicas: o site percebe o que o cliente quis dizer", () => {
   assert.equal(tipos(""), "");
   assert.equal(BP.dicasObs(cat.itens[id("Porções", "Porção Mista")], [], "sem cebola", 1, true, cat).length, 0);
 });
+
+test("mensagem do WhatsApp não leva preço nem pede confirmação de valor", () => {
+  const s = [{ id: cat.lista[0].id, qtd: 2, adds: [], obs: "" }];
+  const msg = BP.mensagem(s, "Ana", cat);
+  assert.ok(!/R\$|\d+,\d\d/.test(msg), "sem preço na mensagem");
+  assert.ok(!/confirma/i.test(msg), "sem pedir confirmação de valor");
+  assert.match(msg, /Obrigado!$/);
+  const r = BP.lerMensagem(msg, cat);
+  assert.equal(r.estranhas.length, 0, "o conferir ignora o 'Obrigado!'");
+  assert.equal(r.total, BP.totalSacola(s, cat), "o conferir calcula o valor pelos preços oficiais");
+});

@@ -116,9 +116,10 @@
      Os molhos vão numa linha à parte. Só muda a tela; o texto no cardapio.js continua igual. */
   const NOMES_PROPRIOS = /^(catupiry)$/i;
   const DESC_CACHE = new Map();
-  function descHtml(txt) {
-    txt = String(txt || ""); if (DESC_CACHE.has(txt)) return DESC_CACHE.get(txt);
-    const m = /,?\s*(Maionese,\s*Ketchup e Mostarda)\s*$/i.exec(txt);
+  const MOLHOS_RE = /,?\s*(Maionese,\s*Ketchup e Mostarda)\s*$/i;
+  function descHtml(txt, semMolhos) {
+    txt = String(txt || ""); const chave = (semMolhos ? "1|" : "0|") + txt; if (DESC_CACHE.has(chave)) return DESC_CACHE.get(chave);
+    const m = MOLHOS_RE.exec(txt);
     const base = m ? txt.slice(0, m.index) : txt;
     const partes = base.split(",").map(s => s.trim()).filter(Boolean)
       .map((s, i) => i === 0 ? s : s.split(" ").map(w => NOMES_PROPRIOS.test(w) ? w : w.toLowerCase()).join(" "));
@@ -126,21 +127,23 @@
     if (partes.length === 1) frase = partes[0];
     else if (/\se\s/.test(partes[partes.length - 1])) frase = partes.join(", ");          // o último já tem "e" ("calabresa e tomate")
     else frase = partes.slice(0, -1).join(", ") + " e " + partes[partes.length - 1];
-    const out = `<span class="ings">${esc(frase)}${frase ? "." : ""}</span>` + (m ? `<span class="molhos">Com maionese, ketchup e mostarda.</span>` : "");
-    DESC_CACHE.set(txt, out); return out;
+    // termos que não podem se separar na quebra de linha ("batata / palha")
+    for (const t of ["batata palha", "filé de frango", "contra filé", "2 hambúrgueres", "2 ovos"]) frase = frase.split(t).join(t.replace(/ /g, "\u00a0"));
+    const out = `<span class="ings">${esc(frase)}${frase ? "." : ""}</span>` + (m && !semMolhos ? `<span class="molhos">Com maionese, ketchup e mostarda.</span>` : "");
+    DESC_CACHE.set(chave, out); return out;
   }
 
   /* ---------------- desenhar cardápio ---------------- */
   const AVATAR0 = `<span class="avatar" aria-hidden="true">${icon("burger")}</span>`;
   const tagSacola = id => `<span class="incart" data-incart="${esc(id)}" hidden></span>`;
   const btnAdd = it => `<button class="add" type="button" data-id="${esc(it.id)}" aria-label="Pedir ${esc(it.nome)}">${PLUS}<span>Pedir</span></button>`;
-  const linhaItem = (it, mostrarCat) => `
+  const linhaItem = (it, mostrarCat, semMolhos) => `
     <div class="item" data-id="${esc(it.id)}"><div class="item-in">
       <div>
         ${mostrarCat ? `<div class="cat-label">${esc(it.categoria)}</div>` : ""}
         <div class="top"><span class="name">${esc(it.nome)}</span>${etiqueta(it.preco)}</div>
         ${it.destaque ? `<span class="selo">${esc(it.destaque)}</span>` : ""}
-        ${it.ingredientes ? `<div class="desc">${descHtml(it.ingredientes)}</div>` : ""}
+        ${it.ingredientes ? `<div class="desc">${descHtml(it.ingredientes, semMolhos)}</div>` : ""}
         ${tagSacola(it.id)}
       </div>
       ${btnAdd(it)}
@@ -167,7 +170,10 @@
 
   $("menu").innerHTML = (cat.lista.length ? "" : `<div class="nores"><strong>Cardápio indisponível</strong>Tente de novo em instantes.</div>`) + promo +
     secoes.map(({ c, id, itens }) => {
-      const head = `<div class="sec-head"><div class="sec-title"><h2>${esc(c.categoria)}</h2><div class="sec-sub">${esc(c.subtitulo || itens.length + (itens.length === 1 ? " opção" : " opções"))}</div></div></div>`;
+      // se todos os lanches da seção vêm com os mesmos molhos, isso é dito uma vez só, embaixo do título
+      const todosMolhos = itens.length > 1 && itens.every(it => MOLHOS_RE.test(String(it.ingredientes || "")));
+      const head = `<div class="sec-head"><div class="sec-title"><h2>${esc(c.categoria)}</h2><div class="sec-sub">${esc(c.subtitulo || itens.length + (itens.length === 1 ? " opção" : " opções"))}</div></div></div>` +
+        (todosMolhos ? `<p class="sec-nota">Todos vêm com maionese, ketchup e mostarda.</p>` : "");
       let body;
       if (c.icone === "porcao") body = `<div class="cards">${itens.map(it => `
         <div class="pcard" data-id="${esc(it.id)}"><span class="name">${esc(it.nome)}</span>
@@ -175,7 +181,7 @@
           ${tagSacola(it.id)}
           <div class="row">${etiqueta(it.preco)}${btnAdd(it)}</div></div>`).join("")}</div>`;
       else if (c.icone === "mais") body = `<div class="chips">${itens.map(it => `<div class="chip"><span class="name">${esc(it.nome)}</span>${etiqueta(it.preco)}</div>`).join("")}</div>`;
-      else body = `<div class="list">${itens.map(it => linhaItem(it)).join("")}</div>`;
+      else body = `<div class="list">${itens.map(it => linhaItem(it, false, todosMolhos)).join("")}</div>`;
       return `<section id="${id}">${head}${body}</section>`;
     }).join("");
 
@@ -194,7 +200,7 @@
   /* quadro "Como fazer seu pedido": aberto na primeira visita; quem já sabe pode fechar e ele lembra */
   const como = $("como");
   if (como) {
-    try { if (localStorage.getItem("bp-como") === "0") como.open = false; } catch (e) {}
+    try { const pref = localStorage.getItem("bp-como"); if (pref === "0" || (pref !== "1" && localStorage.getItem("bp-ultimo"))) como.open = false; } catch (e) {}   // quem já fez pedido já sabe como pedir
     como.addEventListener("toggle", () => { try { localStorage.setItem("bp-como", como.open ? "1" : "0"); } catch (e) {} });
     const zap = $("zapDireto");
     if (zap && NUMERO_OK) { zap.href = "https://wa.me/" + NUMERO; zap.hidden = false; }

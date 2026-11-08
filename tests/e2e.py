@@ -315,6 +315,17 @@ with sync_playwright() as p:
         if z == "1":
             check(not r["quebra"] and len(r["tam"]) == 1, f"{w}px: nenhum nome quebrado e todos com o mesmo tamanho ({r['quebra'][:2]} {r['tam']})")
         ctx.close()
+    print("\n[16] Quem volta vai direto ao cardápio; molhos ditos uma vez por seção")
+    ctx = b.new_context(); pg = nova(ctx); pg.goto(URL); pg.wait_for_selector("#carregando", state="detached")
+    check(pg.evaluate("document.getElementById('como').open"), "primeira visita: 'Como pedir' aberto")
+    check(pg.locator("#sec-hamburguer .sec-nota").count() == 1 and "maionese" in pg.text_content("#sec-hamburguer .sec-nota"), "seção Hambúrguer avisa uma vez que todos vêm com os molhos")
+    check(pg.locator("#sec-hamburguer .item .molhos").count() == 0, "lanches da seção não repetem a linha dos molhos")
+    pg.evaluate("localStorage.setItem('bp-ultimo', JSON.stringify([{id:'hamburguer/x-tudo',qtd:1,adds:[],obs:''}])); localStorage.removeItem('bp-como')")
+    pg.reload(); pg.wait_for_selector("#carregando", state="detached"); pg.wait_for_timeout(200)
+    check(not pg.evaluate("document.getElementById('como').open") and pg.is_visible("#repetir"), "quem já pediu: 'Como pedir' fechado e 'Pedir de novo' à vista")
+    pg.click("#como summary"); pg.wait_for_timeout(200); pg.reload(); pg.wait_for_selector("#carregando", state="detached"); pg.wait_for_timeout(200)
+    check(pg.evaluate("document.getElementById('como').open"), "se a pessoa abrir o 'Como pedir', ele continua aberto nas próximas visitas")
+    ctx.close()
     b.close()
 
 print(f"\nRESULTADO: {ok} ok, {len(falhas)} falhas")

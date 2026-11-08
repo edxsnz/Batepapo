@@ -71,10 +71,12 @@ O sabotador usa sementes fixas: se ele achar um defeito, o defeito aparece sempr
 
 - **Ideia:** o quadro de letras de feltro com os preços, pendurado na parede de azulejo da lanchonete, com o barrado de azulejo vermelho embaixo. O quadro aparece na capa e no rodapé; o resto do site é limpo, para ficar fácil de ler.
 - **Quadro da capa:** mostra alguns lanches com o preço de verdade, puxado do `cardapio.js` (muda sozinho quando você muda o preço). Tocar numa linha abre o pedido daquele lanche. No celular aparecem 4 lanches; no computador, 6.
-- **Cores** (no começo do CSS do `index.html`): verde-feltro `#1e3b30`, letra `#f2f0e6`, azulejo `#f6f8f5`, mostarda `#f2b807` (botão Pedir), ketchup `#c8321f` (avisos e barrado), verde do WhatsApp só no botão de enviar.
+- **Cores** (no começo do CSS do `index.html`): verde-feltro `#1e3b30`, letra `#f2f0e6`, azulejo `#f6f8f5`, mostarda `#f2b807` (botão Pedir), ketchup `#c8321f` (avisos e barrado), verde do WhatsApp `#15803f` só no botão de enviar. O amarelo mostarda é só para botões (o que dá para tocar); o destaque da casa é um quadrinho de feltro.
 - **Letras:** Barlow Condensed (quadro, nomes e preços) e Figtree (textos). Caixa-alta só no quadro, como as letrinhas de verdade.
 - **Ingredientes** aparecem como frase ("Pão, filé, queijo, alface, tomate e batata palha."); no `cardapio.js` continuam escritos do mesmo jeito.
 - As páginas `conferir.html` e `verificar.html` usam o mesmo visual.
+- **Quem já pediu** vê o "Como pedir por aqui" fechado e o "Pedir de novo" no topo (chega mais rápido aos lanches). Quem abrir o "Como pedir" de novo continua vendo ele aberto.
+- **Molhos:** quando todos os lanches de uma seção vêm com maionese, ketchup e mostarda, isso aparece uma vez embaixo do título da seção, em vez de repetir em cada lanche.
 
 ## Prévia ao compartilhar o link (WhatsApp, Facebook, Instagram)
 

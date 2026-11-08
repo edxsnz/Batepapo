@@ -100,7 +100,8 @@
   const totalSacola = (s, cat) => s.reduce((t, l) => t + precoLinha(l, cat), 0);
   const contar = s => s.reduce((t, l) => t + l.qtd, 0);
 
-  // Mensagem do pedido. Não leva preço: o valor é sempre conferido pela lanchonete com os preços oficiais.
+  // Mensagem do pedido. Não leva preço de propósito: quem recebe confere o valor com os preços oficiais
+  // (página conferir.html), então editar a mensagem não muda o valor do pedido.
   const CABECALHO = "*PEDIDO - LANCHONETE BATE PAPO*";
   const SEP = "------------------------------";
   function mensagem(sacola, nome, cat) {
@@ -113,7 +114,7 @@
       if (variacoes && !l.adds.length && !l.obs) L.push("   do jeito do cardápio");
       if (l.obs) L.push("   Obs: " + l.obs);
     });
-    L.push("", SEP, "", "Aguardo a confirmação do valor.");
+    L.push("", SEP, "", "Obrigado!");
     return L.join("\n");
   }
   // Deixa o mesmo lanche junto (ex: os dois X-Tudo um embaixo do outro), mantendo a ordem em que entraram.
@@ -195,7 +196,7 @@
     todo.slice(0, MAX_TEXTO).split(/\r?\n/).forEach(raw => {
       const t = raw.length > MAX_LINHA ? "" : raw.replace(/[*_~`]/g, "").replace(INVISIVEIS, " ").trim();
       if (raw.length > MAX_LINHA) { atual = null; estranhas.push(raw.trim().slice(0, 120)); return; }
-      if (!t || /^-{5,}$/.test(t) || /^pedido\s*-\s*lanchonete/i.test(t) || /^aguardo a confirma/i.test(t)) return;
+      if (!t || /^-{5,}$/.test(t) || /^pedido\s*-\s*lanchonete/i.test(t) || /^aguardo a confirma/i.test(t) || /^obrigad[oa]!?$/i.test(t)) return;
       let m;
       if ((m = t.match(/^cliente:\s*(.*)$/i))) { cliente = limpar(m[1], LIMITES.nome); return; }
       if ((m = t.match(/^(\d{1,4})\s*x\s+(.+)$/i))) {
