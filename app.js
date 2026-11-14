@@ -34,7 +34,18 @@
 
   /* ---------------- sacola (estado) ---------------- */
   const CHAVE = "bp-sacola-v2";
-  let sacola = BP.validarSacola(store.get(CHAVE, []), cat);
+  const salva = store.get(CHAVE, []);
+  let sacola = BP.validarSacola(salva, cat);
+  // lanche que saiu do cardápio (ou mudou de nome) desde a última visita: sai do pedido, mas o cliente fica sabendo
+  const saiuDoCardapio = (Array.isArray(salva) ? salva : []).filter(l => l && typeof l.id === "string" && l.id.includes("/") && !cat.itens[l.id]).length;
+  // pedido que já foi enviado há horas não fica preso no botão "Ver meu pedido" (o "Pedir de novo" continua disponível)
+  const ENVIADO_VALE = 3 * 60 * 60 * 1000;
+  const marcaPedido = s => s.map(l => BP.chave(l) + "#" + l.qtd).sort().join("|");
+  (function () {
+    const em = Number(store.get("bp-enviado-em", 0)) || 0;
+    if (!sacola.length || !em || Date.now() - em < ENVIADO_VALE) return;
+    if (marcaPedido(BP.validarSacola(store.get("bp-ultimo", []), cat)) === marcaPedido(sacola)) sacola = [];
+  })();
 
   // Sempre relê o que está salvo antes de mudar (outra aba pode ter mexido) e valida depois.
   // Se o navegador não consegue guardar (armazenamento cheio ou bloqueado), vale a sacola da memória:
@@ -258,13 +269,27 @@
     BP_medirBag = medir;
   })();
   // aviso com título curto (em destaque) e, opcional, uma linha menor embaixo
-  function avisar(t, ms, sub) {
+  let desfazerFn = null;
+  function avisar(t, ms, sub, desfazer) {
     const el = $("toast");
-    if (sub) el.innerHTML = `<b>${esc(t)}</b><small>${esc(sub)}</small>`; else el.textContent = t;
-    el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, ms || 3200);
+    desfazerFn = typeof desfazer === "function" ? desfazer : null;
+    const titulo = String(t).startsWith("✓") ? `<span class="ok" aria-hidden="true">✓</span>${esc(String(t).slice(1))}` : esc(t);   // só o ✓ fica verde
+    if (sub || desfazerFn) el.innerHTML = `<b>${titulo}</b>${sub ? `<small>${esc(sub)}</small>` : ""}${desfazerFn ? `<button class="desfazer" type="button" data-desfazer>Desfazer</button>` : ""}`;
+    else el.textContent = t;
+    el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; desfazerFn = null; }, ms || 3200);
   }
-  // tocar no aviso só fecha o aviso (o toque não "atravessa" para o lanche de baixo)
-  $("toast").addEventListener("click", e => { e.stopPropagation(); clearTimeout(toastT); $("toast").hidden = true; });
+  // tocar no aviso só fecha o aviso (o toque não "atravessa" para o lanche de baixo); "Desfazer" devolve o que saiu
+  $("toast").addEventListener("click", e => {
+    e.stopPropagation(); clearTimeout(toastT); $("toast").hidden = true;
+    const f = e.target.closest("[data-desfazer]") ? desfazerFn : null; desfazerFn = null;
+    if (f) f();
+  });
+  // tira algo do pedido com a chance de desfazer (toque errado acontece, principalmente com o dedo grande)
+  function tirarComDesfazer(fn, texto) {
+    const antes = sacola.map(l => ({ ...l, adds: [...l.adds] }));
+    mudar(fn);
+    avisar(texto, 6000, null, () => { mudar(() => antes); avisar("Pronto, voltou para o seu pedido."); });
+  }
 
   /* ---------------- janelas (com botão voltar do celular) ---------------- */
   let travaCliqueAte = 0, ultimoFoco = null;
@@ -276,7 +301,27 @@
     ultimoFoco = document.activeElement;
     $("toast").hidden = true;                       // aviso antigo não fica por cima da janela que abriu
     $(ov).hidden = false; document.body.classList.add("lock");
-    try { history.pushState({ bp: ov }, ""); } catch (e) {}
+    try { history.pushState({ bp: ov, n: 0 }, ""); } catch (e) {}
+  }
+  // cada passo para a frente vira uma "página" do botão voltar do celular: voltar volta um passo, não fecha tudo
+  function empurrarPasso(ov, p) {
+    const st = history.state, n = st && st.bp === ov ? (st.n || 0) + 1 : 1;
+    try { history.pushState({ bp: ov, n, passo: p }, ""); } catch (e) {}
+  }
+  function trocarPasso(ov, p) {
+    const st = history.state;
+    if (st && st.bp === ov) try { history.replaceState({ ...st, passo: p }, ""); } catch (e) {}
+  }
+  const naHistoria = ov => !!(history.state && history.state.bp === ov && history.state.n > 0);
+  // Voltar no histórico é assíncrono. Toques em rajada (dedo tremendo, toque duplo) somariam vários "voltar"
+  // e poderiam tirar a pessoa do site. Por isso: um voltar de cada vez, e toques no meio dele são ignorados.
+  let historiaPendente = false, historiaT = 0;
+  function voltarHistoria(n, planoB) {
+    if (historiaPendente) return;
+    historiaPendente = true;
+    clearTimeout(historiaT);
+    historiaT = setTimeout(() => { if (historiaPendente) { historiaPendente = false; planoB(); } }, 800);   // navegador não respondeu: faz direto
+    history.go(-n);
   }
   function esconder(ov) {
     if ($(ov).hidden) return;
@@ -285,12 +330,22 @@
     if (ultimoFoco && document.contains(ultimoFoco)) try { ultimoFoco.focus({ preventScroll: true }); } catch (e) {}
   }
   function fechar(ov) {
-    if (history.state && history.state.bp === ov) history.back();   // o popstate esconde
+    const st = history.state;
+    if (historiaPendente) return;
+    if (st && st.bp === ov) voltarHistoria((st.n || 0) + 1, () => esconder(ov));   // volta todas as páginas da janela; o popstate esconde
     else esconder(ov);
   }
   window.addEventListener("popstate", () => {
-    const st = history.state && history.state.bp;
-    ["ovItem", "ovBag"].forEach(id => { if (id !== st) esconder(id); });
+    historiaPendente = false; clearTimeout(historiaT);
+    const st = history.state, bp = st && st.bp;
+    ["ovItem", "ovBag"].forEach(id => { if (id !== bp) esconder(id); });
+    if (bp === "ovItem" && F && !$("ovItem").hidden) {               // voltou (ou avançou) um passo do lanche
+      const alvo = st.passo || "qtd";
+      if (passosDe(F.it).includes(alvo) && alvo !== F.passo) { F.passo = alvo; renderItem(); }
+    } else if (bp === "ovBag" && !$("ovBag").hidden) {               // voltou um passo do pedido
+      const alvo = st.passo === "Nome" && sacola.length ? "Nome" : st.passo === "Ok" ? "Ok" : "Bag";
+      if (alvo !== passoAtual) { passo(alvo); if (alvo === "Bag") desenharSacola(); else if (alvo === "Nome") atualizarMsg(); }
+    }
   });
   if (history.state && history.state.bp) try { history.replaceState(null, ""); } catch (e) {}
 
@@ -426,7 +481,7 @@
 
   const sheetItem = $("ovItem");
   sheetItem.addEventListener("click", e => {
-    if (!F) return;
+    if (!F || historiaPendente) return;
     const t = e.target.closest("button"); if (!t || !sheetItem.contains(t)) return;
     if (t.dataset.setq) { F.qtd = Number(t.dataset.setq); ajustarUnidades(); renderItem(); return; }
     if (t.dataset.qd) { F.qtd += Number(t.dataset.qd); ajustarUnidades(); renderItem(); return; }
@@ -436,7 +491,11 @@
       F.modo = t.dataset.modo; renderItem(); return;
     }
     if (t.dataset.dica) {
-      if (t.dataset.dica === "separar") { F.un = F.un.map(() => novoJeito(F.comum.adds)); F.comum.obs = ""; F.modo = "diferentes"; F.passo = "jeito"; renderItem(); return; }
+      if (t.dataset.dica === "separar") {
+        F.un = F.un.map(() => novoJeito(F.comum.adds)); F.comum.obs = ""; F.modo = "diferentes";
+        if (naHistoria("ovItem") && history.state.passo === "confere") { voltarHistoria(1, () => { F.passo = "jeito"; renderItem(); }); return; }   // o popstate mostra o passo anterior
+        F.passo = "jeito"; trocarPasso("ovItem", "jeito"); renderItem(); return;
+      }
       const j = jeitoDe(t.dataset.k); if (!j || !cat.itens[t.dataset.add]) return;
       if (t.dataset.dica === "add") j.adds.add(t.dataset.add); else j.adds.delete(t.dataset.add);
       renderItem(); return;
@@ -452,9 +511,12 @@
     const ps = passosDe(F.it), i = ps.indexOf(F.passo);
     if (acao === "continuar") {
       if (F.passo === "qtd") ajustarUnidades();
-      F.passo = ps[Math.min(i + 1, ps.length - 1)]; renderItem();
+      const prox = ps[Math.min(i + 1, ps.length - 1)];
+      if (prox !== F.passo) { F.passo = prox; empurrarPasso("ovItem", prox); }
+      renderItem();
     } else if (acao === "voltar") {
       if (F.passo === "jeito" && F.modo && F.qtd > 1) { F.modo = null; renderItem(); return; }   // volta para "vão todos iguais?"
+      if (naHistoria("ovItem")) { const ant = ps[Math.max(i - 1, 0)]; voltarHistoria(1, () => { F.passo = ant; renderItem(); }); return; }   // mantém o botão voltar do celular em dia
       F.passo = ps[Math.max(i - 1, 0)]; renderItem();
     } else if (acao === "confirmar") confirmarItem();
   });
@@ -480,7 +542,7 @@
   }
 
   document.addEventListener("click", e => {
-    if (Date.now() < travaCliqueAte || aberta()) return;
+    if (Date.now() < travaCliqueAte || aberta() || historiaPendente) return;
     const alvo = e.target.closest(".add, .item, .pcard, .promo, .placa-lista button"); if (!alvo) return;
     abrirItem(alvo.dataset.id);
   });
@@ -524,11 +586,15 @@
   // linhas são achadas pela chave (não pela posição), então outra aba mexendo não faz remover o item errado
   $("lines").addEventListener("click", e => {
     const q = e.target.closest("[data-q]"), r = e.target.closest("[data-rm]");
-    if (q) mudar(s => { const l = s.find(x => BP.chave(x) === q.dataset.k); if (l) l.qtd += Number(q.dataset.q); return s.filter(x => x.qtd > 0); });
-    else if (r) mudar(s => s.filter(x => BP.chave(x) !== r.dataset.rm));
+    const nomeDe = k => { const l = sacola.find(x => BP.chave(x) === k); return l ? cat.itens[l.id].nome : "Lanche"; };
+    if (q) {
+      const l = sacola.find(x => BP.chave(x) === q.dataset.k);
+      if (l && l.qtd + Number(q.dataset.q) <= 0) tirarComDesfazer(s => s.filter(x => BP.chave(x) !== q.dataset.k), `${nomeDe(q.dataset.k)} saiu do pedido.`);
+      else mudar(s => { const x = s.find(y => BP.chave(y) === q.dataset.k); if (x) x.qtd += Number(q.dataset.q); return s.filter(y => y.qtd > 0); });
+    } else if (r) tirarComDesfazer(s => s.filter(x => BP.chave(x) !== r.dataset.rm), `${nomeDe(r.dataset.rm)} saiu do pedido.`);
   });
   $("bagbtn").onclick = () => { $("toast").hidden = true; passo("Bag"); desenharSacola(); abrir("ovBag"); try { $("ovBag").querySelector("[data-close]").focus({ preventScroll: true }); } catch (e) {} };
-  $("esvaziar").onclick = () => mudar(() => []);
+  $("esvaziar").onclick = () => tirarComDesfazer(() => [], "Pedido limpo.");
 
   const nomeSalvo = () => limpar(store.get("bp-nome", ""), LIMITES.nome);
   const textoPedido = () => BP.mensagem(sacola, $("nome").value, cat);
@@ -540,14 +606,14 @@
     $("enviar").href = NUMERO_OK ? l.url : "#";
   }
   $("irNome").onclick = () => {
-    if (!sacola.length) return;
+    if (!sacola.length || historiaPendente) return;
     $("nome").value = nomeSalvo(); $("nomeErr").hidden = true;
-    passo("Nome"); atualizarMsg();
+    passo("Nome"); empurrarPasso("ovBag", "Nome"); atualizarMsg();
     setTimeout(() => { if (!$("nome").value) $("nome").focus(); }, 60);
   };
   $("nome").addEventListener("input", () => { $("nomeErr").hidden = true; atualizarMsg(); });
   $("nome").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("enviar").click(); } });
-  $("voltar").onclick = () => { passo("Bag"); desenharSacola(); };
+  $("voltar").onclick = () => { if (naHistoria("ovBag")) { voltarHistoria(1, () => { passo("Bag"); desenharSacola(); }); return; } passo("Bag"); desenharSacola(); };
 
   let ultimoEnvio = 0;
   $("enviar").addEventListener("click", e => {
@@ -559,8 +625,9 @@
     ultimoEnvio = Date.now();
     store.set("bp-nome", nome);
     store.set("bp-ultimo", sacola.map(l => ({ ...l, adds: [...l.adds] })));
+    store.set("bp-enviado-em", Date.now());
     $("enviar").href = linkWhats().url;                                     // monta com a sacola mais recente
-    setTimeout(() => passo("Ok"), 300);
+    setTimeout(() => { passo("Ok"); trocarPasso("ovBag", "Ok"); }, 300);
   });
   $("reabrir").onclick = () => { if (sacola.length) window.open(linkWhats().url, "_blank", "noopener"); };
   // Plano B: copiar o pedido para colar na conversa (WhatsApp que não abre, computador sem WhatsApp, pedido grande)
@@ -655,4 +722,5 @@
   if (!NUMERO_OK) console.warn("WHATSAPP inválido em cardapio.js: use 55 + DDD + número, só dígitos.");
   salvar();
   atualizarTudo();
+  if (saiuDoCardapio) avisar(saiuDoCardapio === 1 ? "Um lanche do seu pedido saiu do cardápio e foi retirado." : `${saiuDoCardapio} lanches do seu pedido saíram do cardápio e foram retirados.`, 7000);
 })();

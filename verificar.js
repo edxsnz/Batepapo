@@ -3,6 +3,6 @@
   "use strict";
   window.__errosCardapio = [];
   window.addEventListener("error", function (e) {
-    window.__errosCardapio.push({ arquivo: String(e.filename || "").split("/").pop(), linha: e.lineno || 0, msg: String(e.message || "") });
+    window.__errosCardapio.push({ arquivo: String(e.filename || "").split("?")[0].split("/").pop(), linha: e.lineno || 0, msg: String(e.message || "") });
   });
 })();

@@ -26,12 +26,13 @@
   function gravar(k, v, sess) { try { (sess ? sessionStorage : localStorage).setItem(k, v); } catch (e) {} }
 
   var comecou = false;
-  function iniciar() {                                  // carrega os scripts em ordem, um depois do outro
+  function iniciar(versoes) {                           // carrega os scripts em ordem, um depois do outro
     if (comecou) return; comecou = true;
     (function proximo(i) {
       if (i >= lista.length) return;
       var s = document.createElement("script");
-      s.src = lista[i];
+      // com a impressão digital no endereço, o navegador nunca usa um script velho guardado
+      s.src = lista[i] + (versoes && versoes[i] ? "?v=" + versoes[i] : "");
       s.onload = s.onerror = function () { proximo(i + 1); };
       document.body.appendChild(s);
     })(0);
@@ -40,13 +41,27 @@
     return fetch(url, { cache: "no-cache", credentials: "same-origin" }).then(function (r) { return r.ok ? r.text() : ""; }, function () { return ""; });
   }
 
-  var espera = setTimeout(iniciar, 2500);               // servidor lento: não deixa o cardápio esperando
+  // Recarregar com o cliente no meio do pedido faria ele perder o que estava escolhendo.
+  // Então, se o cardápio já está na tela, espera ele terminar (janela fechada e campo vazio) antes de atualizar.
+  function ocupado() {
+    var a = document.activeElement;
+    return (document.body && document.body.classList.contains("lock")) ||
+      !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA") && a.value);
+  }
+  function recarregarQuandoPuder() {
+    if (!ocupado()) { location.reload(); return; }
+    var t = setInterval(function () { if (!ocupado()) { clearInterval(t); location.reload(); } }, 1000);
+  }
+
+  var espera = setTimeout(function () { iniciar(); }, 2500);               // servidor lento: não deixa o cardápio esperando
   if (!window.fetch || !window.Promise) { clearTimeout(espera); iniciar(); return; }
+  var versoes = null;
 
   Promise.all([buscar(pagina)].concat(lista.map(buscar))).then(function (r) {
     clearTimeout(espera);
     var pg = r[0], scripts = r.slice(1);
     if (pg && scripts.every(Boolean)) {                 // só decide se conseguiu ler tudo (sem internet, não mexe em nada)
+      versoes = scripts.map(function (t) { return hash(t).replace(".", "-"); });
       var nova = hash(pg) + "|" + hash(scripts.join("#separador#")), antiga = ler(chave);
       gravar(chave, nova);
       var mudouPagina = antiga && antiga.split("|")[0] !== nova.split("|")[0];
@@ -56,10 +71,10 @@
       var recentes = (ler("bp-recarregou", true) || "").split(",").map(Number).filter(function (n) { return n && agora - n < 60000; });
       if ((mudouPagina || (jaRodou && mudouScripts)) && recentes.length < 2) {   // no máximo 2 recargas por minuto: nunca entra em laço
         recentes.push(agora); gravar("bp-recarregou", recentes.join(","), true);
-        location.reload();
+        if (jaRodou) recarregarQuandoPuder(); else location.reload();
         return;
       }
     }
-    iniciar();
+    iniciar(versoes);
   });
 })();

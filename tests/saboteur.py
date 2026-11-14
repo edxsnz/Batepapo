@@ -390,7 +390,7 @@ def cenario_cliques(b):
 def cenario_ambiente(b, p):
     print("\n[9] AMBIENTE — arquivo que não carrega, sem JavaScript, sem internet, telas e fontes extremas")
     for quem, esperado in [("cardapio.js", "Cardápio indisponível"), ("core.js", "Não foi possível carregar"), ("app.js", None)]:
-        ctx = b.new_context(); pg = nova(ctx); pg.route(re.compile(r".*/" + re.escape(quem) + r"$"), lambda r: r.abort()); pg._goto_cru(URL); pg.wait_for_timeout(400)
+        ctx = b.new_context(); pg = nova(ctx); pg.route(re.compile(r".*/" + re.escape(quem) + r"(\?.*)?$"), lambda r: r.abort()); pg._goto_cru(URL); pg.wait_for_timeout(400)
         txt = pg.inner_text("body"); erros = [e for e in pg._erros if "pageerror" in e]
         check(not erros, f"sem {quem}: erro de script {erros[:1]}")
         check(len(txt.strip()) > 40, f"sem {quem}: página em branco")
@@ -504,7 +504,7 @@ def cenario_verificar(b):
         if modifica:
             def rota(r):
                 resp = r.fetch(); r.fulfill(response=resp, body=modifica(resp.text()))
-            pg.route(re.compile(r".*/cardapio\.js$"), rota)
+            pg.route(re.compile(r".*/cardapio\.js(\?.*)?$"), rota)
         pg.goto(VER); pg.wait_for_timeout(500); return ctx, pg
     ctx, pg = abrir(); out = pg.inner_text("#out")
     check("Tudo certo: 43 itens lidos" in out, f"cardápio certo deveria dizer 'Tudo certo: 43 itens' → {out[:120]!r}"); check("R$ 16,80" in out and "R$ 22,50" in out, "mostra os preços com centavos"); check("(16) 3382-3518" in out, "mostra o WhatsApp formatado")

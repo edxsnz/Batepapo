@@ -186,6 +186,8 @@
   // Quem cola pode ter editado a mensagem à mão: tudo que fugir do que o site gera (quantidade fora do limite,
   // adicional repetido, pedido grande demais, texto enorme) é apontado em "estranhas" e NÃO entra na conta.
   const MAX_TEXTO = 20000, MAX_LINHA = 300;
+  const CARIMBO_WEB = /^\s*\[\d{1,2}:\d{2}(?::\d{2})?,?\s*\d{1,2}\/\d{1,2}\/\d{2,4}\]\s*[^:\n]{1,60}:\s*/;
+  const CARIMBO_EXPORT = /^\s*\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\s*-\s*[^:\n]{1,60}:\s*/;
   function lerMensagem(texto, cat) {
     const porNome = Object.create(null);
     Object.values(cat.itens).forEach(it => { porNome[it.tipo + ":" + fold(it.nome).replace(/[^a-z0-9]/g, "")] = it; });
@@ -193,7 +195,9 @@
     const linhas = [], estranhas = [];
     let cliente = "", atual = null, itens = 0;
     const todo = String(texto == null ? "" : texto), cortado = todo.length > MAX_TEXTO;
-    todo.slice(0, MAX_TEXTO).split(/\r?\n/).forEach(raw => {
+    todo.slice(0, MAX_TEXTO).split(/\r?\n/).forEach(raw0 => {
+      // carimbo que o WhatsApp põe ao copiar a conversa: "[18:07, 13/11/2026] Rita: " (Web/Desktop) ou "13/11/2026 18:07 - Rita: " (conversa exportada)
+      const raw = raw0.replace(CARIMBO_WEB, "").replace(CARIMBO_EXPORT, "");
       const t = raw.length > MAX_LINHA ? "" : raw.replace(/[*_~`]/g, "").replace(INVISIVEIS, " ").trim();
       if (raw.length > MAX_LINHA) { atual = null; estranhas.push(raw.trim().slice(0, 120)); return; }
       if (!t || /^-{5,}$/.test(t) || /^pedido\s*-\s*lanchonete/i.test(t) || /^aguardo a confirma/i.test(t) || /^obrigad[oa]!?$/i.test(t)) return;

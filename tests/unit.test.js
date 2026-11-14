@@ -148,3 +148,16 @@ test("mensagem do WhatsApp não leva preço nem pede confirmação de valor", ()
   assert.equal(r.estranhas.length, 0, "o conferir ignora o 'Obrigado!'");
   assert.equal(r.total, BP.totalSacola(s, cat), "o conferir calcula o valor pelos preços oficiais");
 });
+
+test("conferir entende mensagem copiada do WhatsApp Web/Desktop e de conversa exportada", () => {
+  const web = "[18:07, 13/11/2026] Rita: *PEDIDO - LANCHONETE BATE PAPO*\n[18:07, 13/11/2026] Rita: *Cliente:* Rita\n[18:07, 13/11/2026] Rita: *2x X-TUDO*\n[18:07, 13/11/2026] Rita:    + adicional de bacon (em cada)";
+  const r = BP.lerMensagem(web, cat);
+  assert.equal(r.estranhas.length, 0);
+  assert.equal(r.cliente, "Rita");
+  assert.equal(r.total, (2400 + 600) * 2);
+  const exp = BP.lerMensagem("13/11/2026 18:07 - Rita: *1x X-SALADA*\n13/11/26, 18:07 - Rita: Obs: sem tomate", cat);
+  assert.equal(exp.total, 1300);
+  assert.equal(exp.linhas[0].obs, "sem tomate");
+  // texto que só parece carimbo continua sendo tratado como linha estranha
+  assert.equal(BP.lerMensagem("[oi] 3x X-TUDO", cat).linhas.length, 0);
+});

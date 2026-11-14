@@ -35,5 +35,7 @@
   }
   $("calc").addEventListener("click", calcular);
   $("txt").addEventListener("paste", () => setTimeout(calcular, 0));
+  let espera = 0;                                   // digitou ou colou: confere sozinho, sem precisar apertar o botão
+  $("txt").addEventListener("input", () => { clearTimeout(espera); espera = setTimeout(calcular, 300); });
   $("limpa").addEventListener("click", () => { $("txt").value = ""; $("out").innerHTML = ""; $("txt").focus(); });
 })();

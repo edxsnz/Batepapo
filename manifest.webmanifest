@@ -1,0 +1,16 @@
+{
+  "name": "Lanchonete Bate Papo",
+  "short_name": "Bate Papo",
+  "description": "Cardápio da Lanchonete Bate Papo. Escolha seu lanche e mande o pedido pelo WhatsApp.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f8f5",
+  "theme_color": "#1e3b30",
+  "icons": [
+    { "src": "icones/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icones/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

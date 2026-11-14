@@ -83,3 +83,19 @@ O sabotador usa sementes fixas: se ele achar um defeito, o defeito aparece sempr
 - A imagem é o arquivo `compartilhar.jpg` (1200 × 630). Ela precisa estar na mesma pasta do `index.html` no GitHub.
 - As tags ficam no começo do `index.html` e usam o endereço completo `https://edxsnz.github.io/Batepapo/`. Se o endereço do site mudar (outro nome de repositório ou domínio próprio), troque esse endereço nas linhas indicadas.
 - O WhatsApp guarda a prévia de um link por um tempo. Se você já tinha mandado o link antes, a prévia nova pode demorar a aparecer nessa conversa; em conversas novas ela já vem certa. Para testar na hora, mande o link com algo no final, por exemplo `https://edxsnz.github.io/Batepapo/?v=2`.
+
+## Revisão de qualidade, segurança e corridas (novembro de 2026)
+
+O que foi corrigido (cada item tem teste em `tests/corridas.py`):
+- **Atualização no meio do pedido:** se uma versão nova do site chega enquanto o cliente escolhe um lanche (internet lenta, iPhone), a página não recarrega mais na cara dele. Ela espera a janela fechar e o campo de texto ficar vazio, e aí se atualiza sozinha.
+- **Scripts sempre novos:** o `carregar.js` coloca uma "impressão digital" no endereço de cada script (`app.js?v=...`), então o navegador nunca usa um script velho guardado.
+- **Botão voltar do celular:** volta um passo (de "Do seu jeito" para "Quantidade", da tela do nome para o pedido) em vez de fechar tudo.
+- **Toques em rajada:** vários toques seguidos em Voltar/Corrigir ou Esc repetido não somam mais vários "voltar" (antes podiam tirar a pessoa do site).
+- **Desfazer:** remover um lanche, baixar para zero ou "Limpar meu pedido" mostra um aviso com o botão **Desfazer**. Com a janela aberta, o aviso aparece no alto da tela e não cobre os botões.
+- **Pedido já enviado:** se o pedido foi enviado há mais de 3 horas e não mudou, o site começa com o pedido vazio na próxima visita (o "Pedir de novo" continua lá).
+- **Lanche que saiu do cardápio:** se você tirar um lanche do `cardapio.js`, quem tinha ele no pedido vê um aviso e o resto do pedido continua.
+- **Página do atendente (`conferir.html`):** confere sozinha enquanto cola ou digita, e entende a mensagem copiada do WhatsApp Web/Desktop (com o "[18:07, 13/11/2026] Rita:" na frente) e de conversa exportada do celular.
+- **Ícone na tela inicial:** "Adicionar à tela inicial" no celular agora mostra o ícone do quadro de feltro e abre como aplicativo (`manifest.webmanifest` e pasta `icones/`).
+- **iPhone:** rolar até o fim de uma janela não puxa mais o cardápio que está atrás.
+
+Testes: `cd tests && python3 corridas.py` (com o site em http://127.0.0.1:8765/; usa a porta 8791 para simular internet lenta).
