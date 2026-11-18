@@ -161,3 +161,11 @@ test("conferir entende mensagem copiada do WhatsApp Web/Desktop e de conversa ex
   // texto que só parece carimbo continua sendo tratado como linha estranha
   assert.equal(BP.lerMensagem("[oi] 3x X-TUDO", cat).linhas.length, 0);
 });
+
+test("conferir entende o carimbo do iPhone (data antes da hora)", () => {
+  const ios = "[13/11/2026, 18:07:12] Rita: *PEDIDO - LANCHONETE BATE PAPO*\n[13/11/26 18:07] Rita: *Cliente:* Rita\n[13/11/2026, 18:07:12] Rita: *1x X-SALADA*";
+  const r = BP.lerMensagem(ios, cat);
+  assert.deepEqual(r.estranhas, []);
+  assert.equal(r.cliente, "Rita");
+  assert.equal(r.total, 1300);
+});

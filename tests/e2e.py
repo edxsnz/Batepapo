@@ -1,9 +1,10 @@
 """Bateria de testes no navegador (Chromium) contra o site servido por HTTP."""
-import json, re, sys, time
+import json, os, re, sys, time
 from playwright.sync_api import sync_playwright
 
 URL = "http://127.0.0.1:8765/"
-AXE = open("/home/claude/tests/node_modules/axe-core/axe.min.js").read()
+# axe-core vem do "npm install" feito dentro de tests/ (funciona em qualquer pasta e sistema)
+AXE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "node_modules", "axe-core", "axe.min.js"), encoding="utf-8").read()
 falhas, ok = [], 0
 
 def check(cond, nome):
@@ -75,6 +76,16 @@ with sync_playwright() as p:
     check(pg.evaluate("window.__xss") is None, "busca não executa código digitado")
     pg.fill("#busca", "a" * 5000); check(not pg._erros, "busca com texto enorme não trava")
     pg.fill("#busca", ""); check(pg.locator("#menu").is_visible(), "limpar busca volta o cardápio")
+    ctx.close()
+    # cliente digitou na busca antes do cardápio terminar de carregar (ou o navegador restaurou o campo ao voltar)
+    ctx = b.new_context(); pg = nova(ctx)
+    pg.add_init_script("document.addEventListener('DOMContentLoaded', () => { document.getElementById('busca').value = 'bacon'; })")
+    pg.goto(URL); pg.wait_for_timeout(300)
+    check(not pg._erros, f"busca já preenchida ao carregar não quebra o site {pg._erros[:1]}")
+    check(pg.locator("#resultados .item").count() > 0, "busca já preenchida ao carregar mostra os resultados")
+    pg.locator('#resultados .item:has(.name:text-is("X-Bacon")) .add').click(); pg.wait_for_selector("#ovItem:not([hidden])")
+    ate_conferir(pg); pg.click('#itFoot [data-acao="confirmar"]'); pg.wait_for_selector("#ovItem", state="hidden")
+    check(pg.text_content("#bagN") == "1", "com a busca já preenchida ao carregar, dá para fazer o pedido")
     ctx.close()
 
     print("\n[3] Sacola: adicionar, juntar iguais, adicionais, total em centavos")
@@ -150,8 +161,9 @@ with sync_playwright() as p:
 
     pg2.click("#irNome"); pg2.fill("#nome", "Carlos")
     popups = []; ctx.on("page", lambda pp: popups.append(pp.url))
-    pg2.evaluate("() => { const a = document.getElementById('enviar'); a.click(); a.click(); a.click(); }")
-    pg2.wait_for_timeout(800)
+    # toque triplo de verdade (cliques via script não contam como toque e o Chromium pode bloquear a janela como pop-up)
+    pg2.bring_to_front(); pg2.click("#enviar", click_count=3)
+    pg2.wait_for_timeout(1500)
     check(len(popups) == 1, f"toque triplo em enviar abre o WhatsApp uma vez só ({len(popups)})")
     check(pg2.is_visible("#stepOk"), "mostra tela de pedido pronto")
     ctx.close()

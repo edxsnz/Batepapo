@@ -56,7 +56,12 @@ INV_JS = """() => {
   if (vis('ovItem') && vis('ovBag')) erros.push('duas janelas abertas ao mesmo tempo');
   const lock = document.body.classList.contains('lock'), alguma = vis('ovItem') || vis('ovBag');
   if (lock !== alguma) erros.push('travamento de rolagem inconsistente: lock=' + lock + ' janela=' + alguma);
-  if (document.documentElement.scrollWidth > innerWidth + 1) erros.push('rolagem lateral: ' + document.documentElement.scrollWidth + ' > ' + innerWidth);
+  if (document.documentElement.scrollWidth > innerWidth + 1) {
+    // diz qual elemento saiu da tela (ignora o que rola dentro da própria caixa, como a barra de categorias)
+    const culpa = [...document.querySelectorAll('body *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.right > innerWidth + 1 && !e.closest('.cats'); })
+      .slice(0, 3).map(e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className ? '.' + e.className.split(' ')[0] : '') + ' ' + Math.round(e.getBoundingClientRect().right) + 'px');
+    erros.push('rolagem lateral: ' + document.documentElement.scrollWidth + ' > ' + innerWidth + ' ' + JSON.stringify(culpa));
+  }
   let guardada = []; try { guardada = JSON.parse(localStorage.getItem('bp-sacola-v2') || '[]'); } catch (e) {}
   const s = BP.validarSacola(guardada, cat);
   const n = BP.contar(s);
@@ -515,6 +520,8 @@ def cenario_verificar(b):
     check("foram ignorados" in out and "Preço inválido" in out and "Nome repetido" in out, f"itens ruins deveriam ser listados → {out[:200]!r}"); ctx.close()
     ctx, pg = abrir(lambda s: s.replace('"551633823518"', '"123"')); out = pg.inner_text("#out"); check("número do WhatsApp está errado" in out, "número errado é apontado"); ctx.close()
     ctx, pg = abrir(lambda s: s.replace('destaque: "Especial da casa", ', '')); out = pg.inner_text("#out"); check("destaque" in out and "nenhum" in out, "sem destaque é apontado"); ctx.close()
+    ctx, pg = abrir(lambda s: s.replace('preco: 13,', 'preco: 0,', 1)); out = pg.inner_text("#out")
+    check("preço zero" in out and "X-Salada" in out and "Tudo certo" not in out, f"lanche com preço 0 (de graça) é apontado → {out[:200]!r}"); ctx.close()
 
 # ---------------------------------------------------------------- 15. atualização automática (cache do navegador)
 def servidor_estilo_github_pages(pasta, porta):

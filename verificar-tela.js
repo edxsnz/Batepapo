@@ -22,6 +22,9 @@
     const BP = window.BP, cat = BP.catalogo(window.CARDAPIO);
     let h = "";
     if (cat.avisos.length) h += alerta("Estes itens foram ignorados pelo site:", `<ul>${cat.avisos.map(a => `<li>${esc(a)}</li>`).join("")}</ul>`);
+    // preço 0 é aceito pelo site (sai de graça), mas quase sempre é erro de digitação
+    const gratis = Object.values(cat.itens).filter(i => i.preco === 0);
+    if (gratis.length) h += alerta("Atenção: item com preço zero (sai de graça no pedido).", `Confira se é isso mesmo:<ul>${gratis.map(i => `<li>${esc(i.nome)}</li>`).join("")}</ul>`);
     const numero = String(window.WHATSAPP || "").replace(/\D/g, "");
     if (!/^55\d{10,11}$/.test(numero)) h += alerta("O número do WhatsApp está errado.", "Use 55 + DDD + número, só dígitos. Exemplo: <code>551633823518</code>.");
     else h += `<p class="sub">WhatsApp que recebe os pedidos: <b>(${esc(numero.slice(2, 4))}) ${esc(numero.slice(4, -4))}-${esc(numero.slice(-4))}</b></p>`;
@@ -29,7 +32,7 @@
     if (dest.length !== 1) h += alerta("Atenção ao destaque.", `Hoje ${dest.length === 0 ? "nenhum lanche está" : dest.length + " lanches estão"} com <code>destaque</code>. O normal é 1 (o "Especial da casa" que aparece no topo do site).`);
     else h += `<p class="sub">Lanche em destaque no topo: <b>${esc(dest[0].nome)}</b> (${BP.brl(dest[0].preco)})</p>`;
     const total = cat.lista.length + cat.adicionais.length;
-    h += `<p class="okmsg">${cat.avisos.length ? "Confira os avisos acima." : `Tudo certo: ${total} itens lidos, nenhum problema.`}</p>`;
+    h += `<p class="okmsg">${cat.avisos.length || gratis.length ? "Confira os avisos acima." : `Tudo certo: ${total} itens lidos, nenhum problema.`}</p>`;
     const porCat = new Map();
     Object.values(cat.itens).forEach(i => { if (!porCat.has(i.categoria)) porCat.set(i.categoria, []); porCat.get(i.categoria).push(i); });
     porCat.forEach((itens, nome) => {

@@ -237,7 +237,6 @@
   });
   busca.addEventListener("keydown", e => { if (e.key === "Enter") busca.blur(); if (e.key === "Escape") { busca.value = ""; mostrarBusca(); } });
   $("limpar").addEventListener("click", () => { busca.value = ""; mostrarBusca(); busca.focus(); });
-  if (busca.value) mostrarBusca();                     // cliente digitou (ou o navegador preencheu) antes do cardápio terminar de carregar
 
   /* barra de categorias: marca as bordas que ainda têm categoria escondida (o CSS põe o degradê) */
   const barra = $("cats");
@@ -410,7 +409,7 @@
     </div>`;
   }
   function notaAdds(k, j) {
-    const ns = [...j.adds].map(a => cat.itens[a].nome.toLowerCase());
+    const ns = [...j.adds].map(a => esc(cat.itens[a].nome.toLowerCase()));
     if (!ns.length) return k === "c" && F.qtd > 1 ? `Sem marcar nada, os ${F.qtd} vêm do jeito do cardápio.` : "Sem marcar nada, vem do jeito do cardápio.";
     const lista = ns.length === 1 ? ns[0] : ns.slice(0, -1).join(", ") + " e " + ns[ns.length - 1];
     if (k === "c" && F.qtd > 1) return `<b>Cada um</b> dos ${F.qtd} vem com ${lista} a mais.`;
@@ -722,5 +721,8 @@
   if (!NUMERO_OK) console.warn("WHATSAPP inválido em cardapio.js: use 55 + DDD + número, só dígitos.");
   salvar();
   atualizarTudo();
+  // cliente digitou (ou o navegador restaurou o campo) antes do cardápio terminar de carregar.
+  // Fica aqui no fim de propósito: a busca usa partes da tela que só existem depois de tudo montado.
+  if (busca.value) mostrarBusca();
   if (saiuDoCardapio) avisar(saiuDoCardapio === 1 ? "Um lanche do seu pedido saiu do cardápio e foi retirado." : `${saiuDoCardapio} lanches do seu pedido saíram do cardápio e foram retirados.`, 7000);
 })();

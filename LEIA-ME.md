@@ -40,13 +40,18 @@ Na tela do pedido há o botão **Copiar pedido**: copia a mensagem para o client
 
 ## Testes (para quem mexer no código)
 
+No Windows, troque `python3` por `python`.
+
 ```
+pip install playwright && playwright install chromium   # só na primeira vez
 cd tests
-npm install
+npm install                              # só na primeira vez
 node --test unit.test.js                 # regras de preço, validação e mensagem
 node --test saboteur.test.js             # SABOTADOR das regras: 20 mil sacolas lixo, textos venenosos, cardápio quebrado...
-python3 -m http.server 8765 -d ..  &     # serve o site
-python3 e2e.py                           # bateria no navegador (precisa de: pip install playwright)
+python3 -m http.server 8765 -d ..        # serve o site (deixe rodando em outro terminal)
+python3 e2e.py                           # bateria no navegador
+python3 layout.py                        # botões: nada fora da tela, cortado ou pequeno (16 telas, ~100 s)
+python3 corridas.py                      # corridas: internet lenta, toques em rajada, duas abas
 python3 saboteur.py                      # SABOTADOR no navegador: macaco, armazenamento cheio, HTML adulterado, 2 abas, telas extremas...
 python3 saboteur.py macaco               # roda só um cenário (macaco, storage, dom, abas, historico, busca, texto, cliques, ambiente, conferir, teclado, desempenho, privacidade, verificar, atualizacao)
 ```

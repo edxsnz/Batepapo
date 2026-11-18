@@ -1,6 +1,13 @@
 # Para hospedagens que leem este arquivo (Netlify, Cloudflare Pages): sempre confirmar com o servidor antes de usar o que está guardado.
 # No GitHub Pages este arquivo é ignorado, e quem cuida disso é o carregar.js.
+# Também liga proteções que só funcionam como cabeçalho (não dá para pôr no <meta>): ninguém consegue
+# mostrar o site dentro de outro site (frame-ancestors) e o navegador não "adivinha" tipo de arquivo.
 /*
   Cache-Control: no-cache
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
